@@ -234,14 +234,16 @@ Check:
 4. cargo check passes.
 5. If major release (X.0), note human sign-off required.
 
-Output PASS or FAIL. If FAIL, list specific issues.
+End your response with exactly one of these two lines:
+VERDICT: PASS
+VERDICT: FAIL — <reason>
 
 IMPORTANT: Do NOT use any tools. Only produce text output."
 
         REVIEW_OUTPUT="$(agent_output "$RELEASE_REVIEW_AGENT" "$REVIEW_PROMPT" "phase-review-$MINOR_VERSION")"
         printf '%s\n' "$REVIEW_OUTPUT"
 
-        if printf '%s\n' "$REVIEW_OUTPUT" | grep -qi 'fail'; then
+        if printf '%s\n' "$REVIEW_OUTPUT" | grep -qi 'VERDICT: FAIL'; then
             warn "Phase review FAILED. Fix issues and rerun."
             log_session "phase $MINOR_VERSION review FAILED"
             exit 1
@@ -344,13 +346,16 @@ $(git diff "release/$MINOR_VERSION" --stat)
 5. Tests adequate?
 
 List issues by severity: blocker/warning/nit.
+End your response with exactly one of:
+VERDICT: PASS
+VERDICT: NEEDS_FIX — <blocker description>
 
 IMPORTANT: Do NOT use any tools. Only produce text output."
 
     REVIEW="$(agent_output "$TASK_REVIEW_AGENT" "$REVIEW_PROMPT" "review-$TASK_NUM")"
     printf '%s\n' "$REVIEW"
 
-    if printf '%s\n' "$REVIEW" | grep -qi 'blocker'; then
+    if printf '%s\n' "$REVIEW" | grep -qi 'VERDICT: NEEDS_FIX'; then
         warn "Review found blockers. Fixing..."
         FIX_PROMPT="Fix blockers for task $TASK_NUM:
 
