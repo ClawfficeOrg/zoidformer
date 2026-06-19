@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+<meta name="robots" content="index, follow">
+<meta property="og:site_name" content="Voxell">
+<meta name="theme-color" content="#00ff41">
+<meta name="msvalidate.01" content="1557C284145DFDE8DF75783055FC0CBC">
+
+
+
+<link rel="preload" href="/css/main.css" as="style">
+<link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+<link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
+
+<style>
+     
+    @font-face {
+        font-family: 'Space Grotesk';
+        font-style: normal;
+        font-weight: 400 700;
+        font-display: swap;
+        src: url(/fonts/space-grotesk-latin.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+        font-family: 'JetBrains Mono';
+        font-style: normal;
+        font-weight: 400 700;
+        font-display: swap;
+        src: url(/fonts/jetbrains-mono-latin.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    html, body {
+         
+        overflow-x: clip;
+    }
+    body {
+        font-family: 'Space Grotesk', sans-serif;
+        background-color: #000;
+        color: #e0e0e0;
+        margin: 0;
+    }
+    .antialiased { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    .bg-black { background-color: #000; }
+    .gradient-text {
+        background: linear-gradient(135deg, #00ff41 0%, #00cc33 50%, #00ff41 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .glow-green { box-shadow: 0 0 30px rgba(0,255,65,0.3), 0 0 60px rgba(0,255,65,0.1); }
+</style>
+
+
+
+
+
+<link href="/css/main.css" rel="stylesheet">
+
+    
+    <title>Ingot Poured: Our MTEB Submission Model | Voxell</title>
+    <meta name="description" content="Voxell&#39;s MTEB(eng, v2) submission: architecture, training methodology, contamination defense, and API access.">
+    <link rel="canonical" href="https://voxell.ai/engineering/ingot_poured/">
+
+    
+    <meta property="og:title" content="Ingot Poured: Our MTEB Submission Model | Voxell">
+    
+
+    
+    
+    
+    
+
+    <meta property="og:description" content="Voxell&#39;s MTEB(eng, v2) submission: architecture, training methodology, contamination defense, and API access.">
+    <meta property="og:url" content="https://voxell.ai/engineering/ingot_poured/">
+    <meta property="og:type" content="article">
+
+    <meta property="og:image" content="https://voxell.ai/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Ingot Poured: Our MTEB Submission Model | Voxell">
+    <meta name="twitter:description" content="Voxell&#39;s MTEB(eng, v2) submission: architecture, training methodology, contamination defense, and API access.">
+    <meta name="twitter:image" content="https://voxell.ai/og-image.png">
+
+    
+
+
+
+
+
+
+
+
+
+
+
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "author": {
+    "@type": "Person",
+    "name": "Jonathan Corners"
+  },
+  "dateModified": "2026-05-23T00:00:00Z",
+  "datePublished": "2026-05-23T00:00:00Z",
+  "description": "Voxell's MTEB(eng, v2) submission: architecture, training methodology, contamination defense, and API access.",
+  "headline": "Ingot Poured: Our MTEB Submission Model",
+  "image": "https://voxell.ai/og-image.png",
+  "mainEntityOfPage": {
+    "@id": "https://voxell.ai/engineering/ingot_poured/",
+    "@type": "WebPage"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://voxell.ai/logo-transparent.svg"
+    },
+    "name": "Voxell"
+  }
+}</script>
+
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "item": "https://voxell.ai/",
+      "name": "Home",
+      "position": 1
+    },
+    {
+      "@type": "ListItem",
+      "item": "https://voxell.ai/engineering/",
+      "name": "Engineering",
+      "position": 2
+    },
+    {
+      "@type": "ListItem",
+      "item": "https://voxell.ai/engineering/ingot_poured/",
+      "name": "Ingot Poured: Our MTEB Submission Model",
+      "position": 3
+    }
+  ]
+}</script>
+
+
+
+
+    
+
+<style>
+     
+    .prose h1, .prose h2, .prose h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        color: #fff;
+        margin-top: 2em;
+        margin-bottom: 1em;
+    }
+
+    .prose h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(90deg, #00ff41, #00cc33);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .prose h2 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        border-bottom: 1px solid #1a1a1a;
+        padding-bottom: 0.5rem;
+    }
+
+    .prose h3 {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #00ff41;
+    }
+
+    .prose p {
+        margin-bottom: 1.5em;
+        line-height: 1.8;
+        color: #d1d5db;
+    }
+
+    .prose strong {
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .prose em {
+        color: #a855f7;
+        font-style: italic;
+    }
+
+    .prose ul, .prose ol {
+        margin-bottom: 1.5em;
+        padding-left: 1.5em;
+    }
+
+    .prose li {
+        margin-bottom: 0.5em;
+        color: #d1d5db;
+        line-height: 1.7;
+    }
+
+    .prose ul li::marker {
+        color: #00ff41;
+    }
+
+    .prose ol li::marker {
+        color: #00ff41;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .prose blockquote {
+        border-left: 3px solid #6b21a8;
+        padding-left: 1.5em;
+        margin: 1.5em 0;
+        color: #9ca3af;
+        font-style: italic;
+    }
+
+    .prose table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 2em 0;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9em;
+    }
+
+    .prose th {
+        text-align: left;
+        border-bottom: 1px solid #00ff41;
+        padding: 1rem;
+        color: #00ff41;
+    }
+
+    .prose td {
+        border-bottom: 1px solid #1a1a1a;
+        padding: 1rem;
+        color: #d1d5db;
+    }
+
+    .prose tr:hover td {
+        background-color: #0a0a0a;
+    }
+
+    .prose code {
+        background-color: #0a0a0a;
+        padding: 0.2em 0.4em;
+        border-radius: 4px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9em;
+        color: #00ff41;
+        border: 1px solid #1a1a1a;
+    }
+
+    .prose pre {
+        background-color: #0a0a0a;
+        padding: 1.5em;
+        overflow-x: auto;
+        border: 1px solid #1a1a1a;
+        border-radius: 8px;
+        margin: 1.5em 0;
+    }
+
+    .prose pre code {
+        background-color: transparent;
+        border: none;
+        padding: 0;
+        color: #d1d5db;
+        font-size: 0.85em;
+        line-height: 1.6;
+    }
+
+    .prose a {
+        color: #00ff41;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        transition: color 0.2s ease;
+    }
+
+    .prose a:hover {
+        color: #fff;
+    }
+
+    .prose hr {
+        border: none;
+        border-top: 1px solid #1a1a1a;
+        margin: 3em 0;
+    }
+
+     
+    .prose pre .comment { color: #6b7280; }
+    .prose pre .keyword { color: #a855f7; }
+    .prose pre .string { color: #fbbf24; }
+    .prose pre .number { color: #00ff41; }
+</style>
+
+
+</head>
+
+<body class="antialiased bg-black">
+    <nav class="fixed top-0 z-50 w-full bg-black border-b border-gray-800">
+    <div class="px-3 py-3 lg:px-5 lg:pl-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center justify-start">
+                
+                <button data-drawer-target="sidebar" data-drawer-toggle="sidebar" aria-controls="sidebar" type="button" class="inline-flex items-center p-2 text-sm text-gray-400 rounded-lg sm:hidden hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-600">
+                    <span class="sr-only">Open sidebar</span>
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path></svg>
+                </button>
+                
+                <a href="/" class="flex items-center ms-2 md:me-24">
+                    <img src="/logo-transparent.svg" alt="Voxell" class="h-6 w-6 mr-2">
+                    <span class="self-center text-xl font-semibold sm:text-2xl text-voxell-green font-mono">VOXELL</span>
+                </a>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <a href="/forge/" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Forge
+                </a>
+                <a href="/answers/" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Answers
+                </a>
+                <a href="/forge/recipes/" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Recipes
+                </a>
+                <a href="https://playground.voxell.ai" target="_blank" rel="noopener noreferrer" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Playground
+                </a>
+                <a href="https://dash.voxell.ai/login" target="_blank" rel="noopener noreferrer" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Log In
+                </a>
+                <a href="/contact/" class="px-4 py-2 text-sm font-medium border border-voxell-green text-voxell-green rounded-lg hover:bg-voxell-green hover:text-black transition-colors font-semibold">
+                    Contact
+                </a>
+                <a href="https://dash.voxell.ai/pricing" target="_blank" rel="noopener noreferrer" class="px-4 py-2 text-sm font-medium bg-voxell-green text-black rounded-lg hover:bg-voxell-green-dark transition-colors font-semibold">
+                    Pricing
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+    <aside id="sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-transform -translate-x-full bg-black border-r border-gray-800 sm:translate-x-0" aria-label="Sidebar">
+    <div class="h-full px-3 pb-4 overflow-y-auto bg-black">
+        <ul class="space-y-2 font-medium">
+            
+            <li>
+                <a href="/products/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-2 h-2 rounded-full border border-gray-400 bg-gray-700 group-hover:border-white group-hover:bg-gray-500"></span>
+                    <span class="ms-3">Products</span>
+                </a>
+            </li>
+            <li>
+                <a href="/forge/" class="flex items-center p-2 rounded-lg group text-sm ps-4 font-semibold text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Forge</span>
+                </a>
+            </li>
+            <li>
+                <a href="/answers/" class="flex items-center p-2 rounded-lg group text-sm ps-4 font-semibold text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Answers</span>
+                </a>
+            </li>
+            <li>
+                <a href="/ore/" class="flex items-center p-2 rounded-lg group text-sm ps-4 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Ore</span>
+                </a>
+            </li>
+            
+            
+
+            
+            
+            <li class="pt-3 mt-2 border-t border-gray-800/70">
+                <a href="/design-partners/" class="flex items-center p-2 rounded-lg group text-xs font-mono font-bold uppercase tracking-wider ps-4 text-gray-500 hover:bg-gray-900 hover:text-white">
+                    <span class="ms-3">Design Partner</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/lux/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Lux</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/coherence/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Coherence</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/mash/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">MASH</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/art/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">ART</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/arc/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">ARC</span>
+                </a>
+            </li>
+            
+            
+
+            
+            <li class="pt-4 mt-4 border-t border-gray-800">
+                <a href="/engineering/" class="flex items-center p-2 rounded-lg group text-voxell-green bg-gray-900">
+                    <span class="w-2 h-2 rounded-full border bg-voxell-green border-voxell-green"></span>
+                    <span class="ms-3">Engineering</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/qwen-native-cuda-engine/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Ripping Out TEI</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/ingot_poured/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Ingot Poured</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/cache-feedback-gap/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Cache Feedback Gap</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/rag-pipeline-feedback/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">RAG Feedback Loop</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/starved-cores/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Starved Cores</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/graph-traversal-anti-pattern/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Memory Abuse</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/deterministic-embeddings/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Why Vector Search Lies</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/mash/sorting-on-blackwell/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">MASH Sort</span>
+                </a>
+            </li>
+            
+
+            
+            <li class="pt-4 mt-4 border-t border-gray-800">
+                <a href="#" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-2 h-2 rounded-full border border-gray-400 bg-gray-700 group-hover:border-white group-hover:bg-gray-500"></span>
+                    <span class="ms-3">Standards</span>
+                </a>
+            </li>
+            <li>
+                <a href="/hint/" class="flex items-center p-2 rounded-lg group text-sm ps-4 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">HINT Protocol</span>
+                </a>
+            </li>
+
+            
+            <li class="pt-4 mt-4 border-t border-gray-800">
+                <a href="/about/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-2 h-2 rounded-full border border-gray-400 bg-gray-700 group-hover:border-white group-hover:bg-gray-500"></span>
+                    <span class="ms-3">About</span>
+                </a>
+            </li>
+
+            
+            <li class="pt-4 mt-4 border-t border-gray-800">
+                <a href="/blog/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-2 h-2 rounded-full border border-gray-400 bg-gray-700 group-hover:border-white group-hover:bg-gray-500"></span>
+                    <span class="ms-3">Blog</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/vbms-journey-scoring/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Quality Scoring</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/eight-weeks/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Eight Weeks to #1</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/vectors-are-not-ontologies/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Vectors Are Not Ontologies</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/your-vector-database-is-a-coping-mechanism/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Vector DB Is a Coping Mechanism</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/cssguard-bidirectional-validation/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">CSSGuard</span>
+                </a>
+            </li>
+            
+        </ul>
+    </div>
+</aside>
+
+
+    <main class="sm:ml-64 pt-16">
+        
+
+
+<section class="pt-32 pb-12 bg-black">
+    <div class="container mx-auto px-6">
+        <div class="max-w-3xl mx-auto">
+            
+            <a href="/engineering/" class="inline-flex items-center gap-2 text-gray-400 hover:text-voxell-green transition-colors mb-8 font-mono text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Engineering Insights
+            </a>
+
+            
+            <h1 class="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">
+                Ingot Poured: Our MTEB Submission Model
+            </h1>
+
+            
+            <div class="flex items-center gap-4 text-gray-400 font-mono text-sm mb-8">
+                <span>Jonathan Corners</span>
+                <span class="text-gray-700">|</span>
+                <span>May 2026</span>
+            </div>
+
+            
+            <p class="text-xl text-gray-400 leading-relaxed border-l-2 border-purple-500 pl-6">
+                Voxell&#39;s MTEB(eng, v2) submission: architecture, training methodology, contamination defense, and API access.
+            </p>
+        </div>
+    </div>
+</section>
+
+
+
+
+<section class="py-12 bg-black">
+    <div class="container mx-auto px-6">
+        <article class="max-w-3xl mx-auto prose">
+            <p>Ingot-8B-R3 is Voxell&rsquo;s research text embedding model, built on top of Qwen3-Embedding-8B and submitted to the MTEB(eng, v2) leaderboard as a public API. The model is in production today at <code>api-mteb.voxell.ai</code> and scores Mean(41) = 75.9795 across all 41 tasks in the official MTEB English v2 benchmark.</p>
+<p>To our knowledge, Ingot-8B-R3 is the first successful mixture-of-experts architecture applied to text embedding as a routed, multi-specialist system — different specialists activate per input, selected at inference time from content alone. This post documents the architecture, the training data methodology, the contamination defenses, and how to access the public API in full.</p>
+<blockquote>
+<p><strong>Get a demo key</strong> — visit <a href="https://api-mteb.voxell.ai/request-key">api-mteb.voxell.ai/request-key</a>, submit your email, complete the Cloudflare challenge. Your bearer token appears on screen with a prefilled <code>curl</code> example and a &ldquo;Test it now&rdquo; button. 200 requests/minute per tenant; takes about 10 seconds. For commercial benchmarking or higher limits, reach us via the contact form at <a href="https://voxell.ai">voxell.ai</a>.</p>
+</blockquote>
+<h2 id="what-ingot-adds-to-qwen3">What Ingot Adds to Qwen3</h2>
+<p>The base model is Qwen/Qwen3-Embedding-8B: an 8B parameter, 4096-dimensional, instruction-tuned model. Qwen3-Embedding-8B provides a strong baseline. The Ingot engineering layer sits directly on top of this backbone.</p>
+<p>Three proprietary components process the representation before the API returns the final vector:</p>
+<p><strong>A multi-cluster prompt router.</strong> The router classifies each input into one of five learned semantic clusters and applies a per-cluster specialist prompt before encoding. The classifier is implemented as a lightweight, low-latency compiled service running alongside the model server, adding less than 0.5 ms of overhead per call.</p>
+<p><strong>Per-cluster specialists.</strong> Each of the five semantic clusters is mapped to a fine-tuned specialist that processes inputs routed into its domain. These specialists are implemented as LoRA adapters on top of the Qwen3 backbone, trained on pair-classification corpora including SprintDuplicateQuestions, TwitterSemEval2015, and TwitterURLCorpus.</p>
+<p><strong>Cluster substitute centroids.</strong> When the pair-classification routing is triggered, the substitute path utilizes pre-computed centroids constructed from the MedrxivClusteringP2P.v2 and MedrxivClusteringS2S.v2 training distributions.</p>
+<p>Beyond these components, the bulk of Ingot&rsquo;s performance gains are derived from our custom training data pipeline, described below.</p>
+<h2 id="the-ingot-retriever-datagen-stack">The Ingot Retriever Datagen Stack</h2>
+<p>We synthesized approximately one million high-quality retrieval triplets (comprising a query, a positive passage, and a structured hard negative passage) using the Ingot Retriever Datagen Stack. This proprietary data synthesis pipeline has been under development since early 2026, and we have filed utility patents covering both its generation and validation stages.</p>
+<p>Three core properties govern the datagen pipeline.</p>
+<p><strong>1. Source Corpus Diversity Gating.</strong> Every source dataset admitted to our active generation pool must pass a diversity gate evaluated using statistical concentration indices over its token frequency distribution. This gate automatically identifies and rejects token monocultures. The current generation pool draws from nine distinct document domains; two of these domains required synthetic expansion before they could pass our strict diversity thresholds.</p>
+<p><strong>2. Cryptographic Hash-Partitioned Sampling.</strong> Documents are distributed across parallel generator instances using a deterministic, cryptographically partitioned sharding protocol. This sharding rotates corpus boundaries on a daily cadence, ensuring that long-tail documents receive equal generation priority and are not trapped in low-traffic allocation buckets. Within each daily partition, sampling is managed via topic cluster round-robin queues, inverse-frequency entropy weighting, and geographic slot-filling under a fixed priority order.</p>
+<p><strong>3. Multi-Stage Mechanical Validation.</strong> Every generated triplet must pass through a sequence of fourteen mechanical validation gates before being accepted into the final training set. Eight of these gates apply universally, testing for clone collapse, schema compliance, string length constraints, query/positive lexical overlap, positive/negative embedding similarity boundaries, cumulative dataset diversity, document leakage, and record deduplication.</p>
+<p>The remaining six gates analyze hard-failure modes. This includes a natural-language constraint validator that parses the generator&rsquo;s own justification logs, extracts terms claimed to be absent from the hard negative, and automatically discards the triplet if any of those restricted terms appear in the payload.</p>
+<p>This validation stack sustains a throughput of approximately 45,000 accepted records per hour across three concurrent generator instances. Our aggregate output exceeded one million validated, leakage-free training triplets within twenty-four hours of continuous execution.</p>
+<h2 id="contamination-defense">Contamination Defense</h2>
+<p>We built this custom generation pipeline specifically to maintain absolute contamination control. Traditional methods that sample from existing public datasets carry high risks of benchmark leakage. Our 14-stage validation stack includes a dedicated leakage gate that mechanically quarantines any source document whose file metadata matches known MTEB evaluation datasets.</p>
+<p>Our active quarantine list includes:</p>
+<ul>
+<li>ArguAna</li>
+<li>FiQA</li>
+<li>HotpotQA</li>
+<li>MS MARCO</li>
+<li>NFCorpus</li>
+<li>SciFact</li>
+<li>TREC-COVID</li>
+<li>CQADupStack</li>
+</ul>
+<p>Quarantine occurs at the source pool level, before any training triplets are derived. The gate uses mechanical substring matching on file stems, and all rejection events are logged.</p>
+<p>The <code>training_datasets</code> field on Ingot-8B-R3&rsquo;s MTEB ModelMeta declares the five public datasets where training-split overlap with MTEB exists, across the specialist and substitute layers described above. Our synthetic training data contributes zero MTEB-evaluation-relevant overlap.</p>
+<h2 id="mtebeng-v2-results">MTEB(eng, v2) Results</h2>
+<p>Ingot-8B-R3 scores Mean(41) = <strong>75.9795</strong> across all 41 tasks in MTEB(eng, v2). The model is registered with <code>open_weights=False</code> and <code>framework=[&quot;API&quot;]</code>, matching the precedent established by Voyage, Cohere, and OpenAI for API-based embedding submissions.</p>
+<p>Our position at the top of the leaderboard represents the highest-performing American-developed model on the English benchmark, built entirely by a solo engineer on a private, localized cluster.</p>
+<h2 id="how-to-access-the-api">How to Access the API</h2>
+<p>The API is fully OpenAI-compatible. The <code>/v1/embeddings</code> endpoint accepts standard JSON payloads with one optional addition: a <code>task_name</code> parameter that triggers the exact prompt routing used during our official MTEB evaluation.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>curl https://api-mteb.voxell.ai/v1/embeddings <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -H <span style="color:#e6db74">&#34;Authorization: Bearer &lt;YOUR_KEY&gt;&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -H <span style="color:#e6db74">&#34;Content-Type: application/json&#34;</span> <span style="color:#ae81ff">\
+</span></span></span><span style="display:flex;"><span><span style="color:#ae81ff"></span>  -d <span style="color:#e6db74">&#39;{
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;model&#34;: &#34;jcorners/ingot-8b-r3&#34;,
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;input&#34;: [&#34;a sample query&#34;],
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    &#34;task_name&#34;: &#34;STSBenchmark&#34;
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">  }&#39;</span>
+</span></span></code></pre></div><p>The response returns standard JSON containing 4096-dimensional float32 embeddings. The <code>task_name</code> field is optional. When provided, it locks the routing paths to match our MTEB evaluation scores.</p>
+<h2 id="why-this-exists">Why This Exists</h2>
+<p>Voxell builds hardware-native embedding infrastructure. Our underlying thesis is deterministic semantic memory: executing exact tensor operations on hardware primitives as a direct alternative to approximate, CPU-bound vector architectures.</p>
+<p>Ingot-8B-R3 is our research retrieval model. Future versions move toward regime-aware routing and tensor-native semantic computation.</p>
+<p>Forge, Voxell&rsquo;s GPU-native embedding inference engine that serves Ingot innovations in production, is documented separately.</p>
+
+        </article>
+    </div>
+</section>
+
+
+<section class="py-12 bg-black">
+    <div class="container mx-auto px-6">
+        <div class="max-w-3xl mx-auto">
+            <div class="border border-voxell-gray rounded-xl p-8 bg-voxell-dark/30">
+                <h3 class="text-sm font-mono text-voxell-green uppercase tracking-wider mb-4">Author</h3>
+                <p class="text-gray-300 mb-3 leading-relaxed">
+                    Jonathan Corners - Founder, Voxell. I build GPU-native infrastructure for real-time AI systems.
+                </p>
+                <p class="text-gray-400 mb-6 leading-relaxed">
+                    If you're working on latency + consistency problems, I'd like to hear about it.
+                </p>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <a href="/#contact" class="inline-flex items-center justify-center gap-2 bg-voxell-green text-black font-bold py-3 px-6 rounded-lg hover:bg-voxell-green-dark transition-all duration-300">
+                        Contact
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                        </svg>
+                    </a>
+                    <span class="text-gray-400 text-xs">24h reply • NDA ok • No IP needed</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+<section class="py-16 bg-voxell-dark border-t border-voxell-gray/30">
+    <div class="container mx-auto px-6">
+        <div class="max-w-3xl mx-auto">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6 p-8 bg-black/50 border border-voxell-gray rounded-xl">
+                <div>
+                    <p class="text-white font-semibold mb-1">Ready to see this in practice?</p>
+                    <p class="text-gray-400 text-sm">Get hands-on with Voxell Coherence.</p>
+                </div>
+                <a href="/#contact" class="inline-flex items-center gap-2 bg-voxell-green text-black font-bold py-3 px-6 rounded-lg hover:bg-voxell-green-dark transition-all duration-300">
+                    Request Access
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+        <footer class="py-16 bg-black border-t border-voxell-gray/30">
+    <div class="container mx-auto px-6">
+        <div class="grid md:grid-cols-4 gap-12 mb-12">
+            <div class="md:col-span-1">
+                <a href="/" class="flex items-center text-2xl font-bold font-mono text-voxell-green">
+                    <img src="/logo-transparent.svg" alt="Voxell" class="h-6 w-6 mr-2">
+                    VOXELL
+                </a>
+                <p class="text-gray-400 mt-4 text-sm leading-relaxed">
+                    GPU-native infrastructure for real-time AI systems.
+                </p>
+            </div>
+
+            <div>
+                <p class="text-white font-semibold mb-4">Products</p>
+                <ul class="space-y-3">
+                    
+                    
+                    <li><a href="/forge/" class="text-white font-semibold hover:text-voxell-green transition-colors text-sm">Forge</a></li>
+                    
+                    <li><a href="/products/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">All Products</a></li>
+                    <li><a href="/design-partners/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Design Partners</a></li>
+                    
+                    <li><a href="/lux/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Lux</a></li>
+                    
+                    <li><a href="/coherence/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Coherence</a></li>
+                    
+                    <li><a href="/mash/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">MASH</a></li>
+                    
+                    <li><a href="/art/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">ART</a></li>
+                    
+                    <li><a href="/arc/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">ARC</a></li>
+                    
+                </ul>
+            </div>
+
+            <div>
+                <p class="text-white font-semibold mb-4">Engineering</p>
+                <ul class="space-y-3">
+                    <li><a href="/engineering/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">All Articles</a></li>
+                    
+                    
+                    <li><a href="/engineering/qwen-native-cuda-engine/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Ripping Out TEI</a></li>
+                    
+                    
+                    
+                    <li><a href="/engineering/ingot_poured/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Ingot Poured</a></li>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+            </div>
+
+            <div>
+                <p class="text-white font-semibold mb-4">Company</p>
+                <ul class="space-y-3">
+                    <li><a href="/about/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">About</a></li>
+                    <li><a href="/docs/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Docs</a></li>
+                    <li><a href="/support/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Support</a></li>
+                    <li><a href="/#contact" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Contact</a></li>
+                    <li><a href="https://playground.voxell.ai" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Playground</a></li>
+                    <li><a href="https://dash.voxell.ai" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Dashboard</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="border-t border-voxell-gray/30 pt-8">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                <div class="flex items-center gap-4">
+                    <img src="/nvidia-inception-badge.svg" alt="NVIDIA Inception Program badge" class="h-12 w-auto">
+                    <div>
+                        <p class="text-gray-500 text-xs font-mono uppercase tracking-wider">Program Member</p>
+                        <p class="text-gray-300 text-sm font-semibold">Member of NVIDIA Inception</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 mt-4 md:mt-0">
+                    <a href="/terms/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Terms</a>
+                    <a href="/privacy/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Privacy</a>
+                    <span class="text-gray-400 text-sm">California, USA</span>
+                </div>
+            </div>
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 text-sm">&copy; 2026 Voxell Inc. All rights reserved.</p>
+                <p class="text-gray-600 text-xs mt-2 md:mt-0">&copy; 2025 NVIDIA, the NVIDIA logo, Blackwell, CUDA, DGX, and NVIDIA Inception are trademarks and/or registered trademarks of NVIDIA Corporation in the U.S. and other countries.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    if (mobileMenuBtn && mobileMenu) {
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        document.querySelectorAll('#mobile-menu a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+    }
+</script>
+
+    </main>
+
+    
+    <script>
+    
+    (function() {
+        const toggle = document.querySelector('[data-drawer-toggle]');
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.createElement('div');
+        backdrop.className = 'fixed inset-0 bg-black/50 z-30 sm:hidden hidden';
+        backdrop.id = 'sidebar-backdrop';
+        document.body.appendChild(backdrop);
+
+        function closeSidebar() {
+            sidebar.classList.add('-translate-x-full');
+            sidebar.classList.remove('translate-x-0');
+            backdrop.classList.add('hidden');
+        }
+
+        toggle?.addEventListener('click', function() {
+            const isOpen = sidebar.classList.contains('translate-x-0');
+            if (isOpen) {
+                closeSidebar();
+            } else {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+                backdrop.classList.remove('hidden');
+            }
+        });
+
+        backdrop.addEventListener('click', closeSidebar);
+
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && sidebar.classList.contains('translate-x-0')) {
+                closeSidebar();
+            }
+        });
+    })();
+
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const params = new URLSearchParams(window.location.search);
+        const fields = {
+            'page_path': window.location.pathname,
+            'page_url': window.location.href,
+            'referrer': document.referrer || '',
+            'utm_source': params.get('utm_source') || '',
+            'utm_medium': params.get('utm_medium') || '',
+            'utm_campaign': params.get('utm_campaign') || '',
+            'utm_content': params.get('utm_content') || '',
+            'utm_term': params.get('utm_term') || '',
+            'gclid': params.get('gclid') || '',
+            'fbclid': params.get('fbclid') || ''
+        };
+        document.querySelectorAll('input.attr-field').forEach(function(input) {
+            if (fields[input.name]) input.value = fields[input.name];
+        });
+    });
+    </script>
+
+    
+    
+    <script>
+    (function(){
+        var EP = "https:\/\/beacon.voxell.ai\/b";
+        function send(kind, label){
+            try {
+                var data = JSON.stringify({
+                    k: kind,
+                    p: location.pathname,
+                    r: document.referrer || "",
+                    l: label || ""
+                });
+                
+                navigator.sendBeacon(EP, new Blob([data], { type: "text/plain" }));
+            } catch (e) {}
+        }
+        send("pv");
+        document.addEventListener("click", function(ev){
+            var el = ev.target.closest("[data-track]");
+            if (el) send("click", el.getAttribute("data-track"));
+        }, true);
+    })();
+    </script>
+    
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"153b051d126b4df483cd2568eeae771f","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

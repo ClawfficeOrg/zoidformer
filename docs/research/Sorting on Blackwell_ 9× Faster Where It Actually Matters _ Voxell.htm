@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+  
+
+<meta name="robots" content="index, follow">
+<meta property="og:site_name" content="Voxell">
+<meta name="theme-color" content="#00ff41">
+<meta name="msvalidate.01" content="1557C284145DFDE8DF75783055FC0CBC">
+
+
+
+<link rel="preload" href="/css/main.css" as="style">
+<link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+<link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
+
+<style>
+     
+    @font-face {
+        font-family: 'Space Grotesk';
+        font-style: normal;
+        font-weight: 400 700;
+        font-display: swap;
+        src: url(/fonts/space-grotesk-latin.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+        font-family: 'JetBrains Mono';
+        font-style: normal;
+        font-weight: 400 700;
+        font-display: swap;
+        src: url(/fonts/jetbrains-mono-latin.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    html, body {
+         
+        overflow-x: clip;
+    }
+    body {
+        font-family: 'Space Grotesk', sans-serif;
+        background-color: #000;
+        color: #e0e0e0;
+        margin: 0;
+    }
+    .antialiased { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    .bg-black { background-color: #000; }
+    .gradient-text {
+        background: linear-gradient(135deg, #00ff41 0%, #00cc33 50%, #00ff41 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .glow-green { box-shadow: 0 0 30px rgba(0,255,65,0.3), 0 0 60px rgba(0,255,65,0.1); }
+</style>
+
+
+
+
+
+<link href="/css/main.css" rel="stylesheet">
+
+    
+    <title>Sorting on Blackwell: 9× Faster Where It Actually Matters | Voxell</title>
+    <meta name="description" content="A data-aware GPU sorting engine for NVIDIA Blackwell that beats CUB DeviceRadixSort on real workloads and stays stable at multi-billion-row scale.">
+    <link rel="canonical" href="https://voxell.ai/mash/sorting-on-blackwell/">
+
+    
+    <meta property="og:title" content="Sorting on Blackwell: Up to 9× Faster Where It Actually Matters">
+    
+
+    
+    
+    
+    
+
+    <meta property="og:description" content="A data-aware GPU sorting engine for NVIDIA Blackwell that beats CUB DeviceRadixSort on real workloads and stays stable at multi-billion-row scale.">
+    <meta property="og:url" content="https://voxell.ai/mash/sorting-on-blackwell/">
+    <meta property="og:type" content="website">
+
+    <meta property="og:image" content="https://voxell.ai/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Sorting on Blackwell: 9× Faster Where It Actually Matters | Voxell">
+    <meta name="twitter:description" content="A data-aware GPU sorting engine for NVIDIA Blackwell that beats CUB DeviceRadixSort on real workloads and stays stable at multi-billion-row scale.">
+    <meta name="twitter:image" content="https://voxell.ai/og-image.png">
+
+    
+
+
+
+
+
+
+
+
+
+    
+<style>
+     
+    .prose h1,
+    .prose h2,
+    .prose h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        color: #fff;
+        margin-top: 2em;
+        margin-bottom: 1em;
+    }
+
+    .prose h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(90deg, #00ff41, #00cc33);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .prose h2 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        border-bottom: 1px solid #1a1a1a;
+        padding-bottom: 0.5rem;
+    }
+
+    .prose h3 {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #00ff41;
+    }
+
+    .prose p {
+        margin-bottom: 1.5em;
+        line-height: 1.7;
+        color: #d1d5db;
+    }
+
+    .prose strong {
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .prose ul {
+        margin-bottom: 1.5em;
+        list-style-type: none;
+    }
+
+    .prose li {
+        position: relative;
+        padding-left: 1.5em;
+        margin-bottom: 0.5em;
+        color: #d1d5db;
+    }
+
+    .prose li::before {
+        content: '>';
+        color: #00ff41;
+        position: absolute;
+        left: 0;
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: bold;
+    }
+
+    .prose table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 2em 0;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9em;
+    }
+
+    .prose th {
+        text-align: left;
+        border-bottom: 1px solid #00ff41;
+        padding: 1rem;
+        color: #00ff41;
+    }
+
+    .prose td {
+        border-bottom: 1px solid #1a1a1a;
+        padding: 1rem;
+        color: #d1d5db;
+    }
+
+    .prose tr:hover td {
+        background-color: #0a0a0a;
+    }
+
+    .prose code {
+        background-color: #0a0a0a;
+        padding: 0.2em 0.4em;
+        border-radius: 4px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9em;
+        color: #00ff41;
+        border: 1px solid #1a1a1a;
+    }
+
+    .prose pre {
+        background-color: #0a0a0a;
+        padding: 1.5em;
+        overflow-x: auto;
+        border: 1px solid #1a1a1a;
+        border-radius: 4px;
+        margin: 1.5em 0;
+    }
+
+    .prose pre code {
+        background-color: transparent;
+        border: none;
+        padding: 0;
+        color: #d1d5db;
+    }
+</style>
+
+</head>
+
+<body class="antialiased bg-black">
+    <nav class="fixed top-0 z-50 w-full bg-black border-b border-gray-800">
+    <div class="px-3 py-3 lg:px-5 lg:pl-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center justify-start">
+                
+                <button data-drawer-target="sidebar" data-drawer-toggle="sidebar" aria-controls="sidebar" type="button" class="inline-flex items-center p-2 text-sm text-gray-400 rounded-lg sm:hidden hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-600">
+                    <span class="sr-only">Open sidebar</span>
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path></svg>
+                </button>
+                
+                <a href="/" class="flex items-center ms-2 md:me-24">
+                    <img src="/logo-transparent.svg" alt="Voxell" class="h-6 w-6 mr-2">
+                    <span class="self-center text-xl font-semibold sm:text-2xl text-voxell-green font-mono">VOXELL</span>
+                </a>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <a href="/forge/" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Forge
+                </a>
+                <a href="/answers/" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Answers
+                </a>
+                <a href="/forge/recipes/" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Recipes
+                </a>
+                <a href="https://playground.voxell.ai" target="_blank" rel="noopener noreferrer" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Playground
+                </a>
+                <a href="https://dash.voxell.ai/login" target="_blank" rel="noopener noreferrer" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Log In
+                </a>
+                <a href="/contact/" class="px-4 py-2 text-sm font-medium border border-voxell-green text-voxell-green rounded-lg hover:bg-voxell-green hover:text-black transition-colors font-semibold">
+                    Contact
+                </a>
+                <a href="https://dash.voxell.ai/pricing" target="_blank" rel="noopener noreferrer" class="px-4 py-2 text-sm font-medium bg-voxell-green text-black rounded-lg hover:bg-voxell-green-dark transition-colors font-semibold">
+                    Pricing
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+    <aside id="sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-transform -translate-x-full bg-black border-r border-gray-800 sm:translate-x-0" aria-label="Sidebar">
+    <div class="h-full px-3 pb-4 overflow-y-auto bg-black">
+        <ul class="space-y-2 font-medium">
+            
+            <li>
+                <a href="/products/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-2 h-2 rounded-full border border-gray-400 bg-gray-700 group-hover:border-white group-hover:bg-gray-500"></span>
+                    <span class="ms-3">Products</span>
+                </a>
+            </li>
+            <li>
+                <a href="/forge/" class="flex items-center p-2 rounded-lg group text-sm ps-4 font-semibold text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Forge</span>
+                </a>
+            </li>
+            <li>
+                <a href="/answers/" class="flex items-center p-2 rounded-lg group text-sm ps-4 font-semibold text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Answers</span>
+                </a>
+            </li>
+            <li>
+                <a href="/ore/" class="flex items-center p-2 rounded-lg group text-sm ps-4 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Ore</span>
+                </a>
+            </li>
+            
+            
+
+            
+            
+            <li class="pt-3 mt-2 border-t border-gray-800/70">
+                <a href="/design-partners/" class="flex items-center p-2 rounded-lg group text-xs font-mono font-bold uppercase tracking-wider ps-4 text-gray-500 hover:bg-gray-900 hover:text-white">
+                    <span class="ms-3">Design Partner</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/lux/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Lux</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/coherence/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Coherence</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/mash/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-voxell-green">
+                    <span class="w-1.5 h-1.5 rounded-full border bg-voxell-green border-voxell-green"></span>
+                    <span class="ms-3">MASH</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/art/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">ART</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/arc/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">ARC</span>
+                </a>
+            </li>
+            
+            
+
+            
+            <li class="pt-4 mt-4 border-t border-gray-800">
+                <a href="/engineering/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-2 h-2 rounded-full border border-gray-400 bg-gray-700 group-hover:border-white group-hover:bg-gray-500"></span>
+                    <span class="ms-3">Engineering</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/qwen-native-cuda-engine/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Ripping Out TEI</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/ingot_poured/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Ingot Poured</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/cache-feedback-gap/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Cache Feedback Gap</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/rag-pipeline-feedback/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">RAG Feedback Loop</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/starved-cores/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Starved Cores</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/graph-traversal-anti-pattern/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Memory Abuse</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/deterministic-embeddings/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Why Vector Search Lies</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/mash/sorting-on-blackwell/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">MASH Sort</span>
+                </a>
+            </li>
+            
+
+            
+            <li class="pt-4 mt-4 border-t border-gray-800">
+                <a href="#" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-2 h-2 rounded-full border border-gray-400 bg-gray-700 group-hover:border-white group-hover:bg-gray-500"></span>
+                    <span class="ms-3">Standards</span>
+                </a>
+            </li>
+            <li>
+                <a href="/hint/" class="flex items-center p-2 rounded-lg group text-sm ps-4 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">HINT Protocol</span>
+                </a>
+            </li>
+
+            
+            <li class="pt-4 mt-4 border-t border-gray-800">
+                <a href="/about/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-2 h-2 rounded-full border border-gray-400 bg-gray-700 group-hover:border-white group-hover:bg-gray-500"></span>
+                    <span class="ms-3">About</span>
+                </a>
+            </li>
+
+            
+            <li class="pt-4 mt-4 border-t border-gray-800">
+                <a href="/blog/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-2 h-2 rounded-full border border-gray-400 bg-gray-700 group-hover:border-white group-hover:bg-gray-500"></span>
+                    <span class="ms-3">Blog</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/vbms-journey-scoring/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Quality Scoring</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/eight-weeks/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Eight Weeks to #1</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/vectors-are-not-ontologies/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Vectors Are Not Ontologies</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/your-vector-database-is-a-coping-mechanism/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Vector DB Is a Coping Mechanism</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/cssguard-bidirectional-validation/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">CSSGuard</span>
+                </a>
+            </li>
+            
+        </ul>
+    </div>
+</aside>
+
+
+    <main class="sm:ml-64 pt-16">
+        
+
+<div class="w-full h-[60vh] relative mt-16">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-black z-10"></div>
+    <picture>
+        <source srcset="/articles/sorting_image.webp" type="image/webp">
+        <img src="/articles/sorting_image.jpg" alt="Sorting on Blackwell: 9× Faster Where It Actually Matters" class="w-full h-full object-cover" width="1168" height="784" loading="eager" decoding="async">
+    </picture>
+</div>
+
+
+<article class="container mx-auto px-6 py-12 max-w-4xl relative z-20 -mt-32">
+    <div class="bg-black/80 backdrop-blur-md border border-gray-800 p-8 md:p-12 rounded-lg shadow-2xl">
+        
+        <header class="mb-12 border-b border-gray-800 pb-12">
+            <h1 class="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                Sorting on Blackwell: <span class="gradient-text">9× Faster Where It Actually Matters</span>
+            </h1>
+            <div class="flex items-center text-gray-400 font-mono text-sm">
+                <span class="text-voxell-green">Jonathan Corners</span>
+                <span class="mx-3">•</span>
+                <span>January 2026</span>
+            </div>
+        </header>
+
+        
+        <div class="prose prose-invert max-w-none">
+            <p>If your data is already almost sorted, why are you paying to sort it again?</p>
+
+            <p>For more than a decade, NVIDIA's CUB DeviceRadixSort has been the default answer to that question:
+                fast, battle tested, and completely indifferent to the shape of your data. It treats a perfectly
+                monotonic HFT order book the same way it treats cryptographic white noise. Your latency budget and
+                your power bill pay for that indifference.</p>
+
+            <p>I wanted to know how much performance and headroom we're leaving on the table when we feed real
+                workloads (not synthetic white noise) into a data oblivious sort.</p>
+
+            <p>So I built <strong>MASH</strong>: a GPU native <strong>Multidimensional Adaptive Sorting
+                    Hierarchy</strong> engine. Before it does anything expensive, it runs a single, "fingerprint"
+                pass over your keys, compresses the topology into a compact summary, and then chooses the cheapest
+                correct strategy instead of blindly running the worst-case radix sort every time.</p>
+
+            <p>On Blackwell GB10 (48 SMs, CUDA 13.0), MASH delivers the following performance improvements over CUB
+                DeviceRadixSort on 64 bit keys across 100M, 1B, up to 3B elements (reported numbers are geometric
+                mean):</p>
+
+            <ul>
+                <li><strong>Presorted:</strong> 8.64×</li>
+                <li><strong>Reverse:</strong> 4.29×</li>
+                <li><strong>Uniform random:</strong> 1.41×</li>
+                <li><strong>Zipfian (Heavy-Tail):</strong> 1.33×</li>
+            </ul>
+
+            <p>On presorted 1B row workloads, the kind you actually see in HFT, logging, and time series, MASH is
+                roughly <strong>9× faster</strong> than CUB. On reverse runs it's <strong>>4× faster</strong>.</p>
+
+            <p>But the real story starts where the charts usually stop. At <strong>7 billion elements</strong>,
+                standard CUB crashes due to memory exhaustion. MASH keeps running.</p>
+
+            <h3>For Service Owners: What These Numbers Buy You</h3>
+
+            <p>If you manage a GPU-backed analytics service or time series DB, these kernels translate directly to
+                service-level outcomes:</p>
+
+            <ul>
+                <li><strong>ORDER BY / Window Functions:</strong> Latency for 1B–3B row partitions drops from ~2.9s
+                    to ~0.33s on presorted segments.</li>
+                <li><strong>Ingestion Efficiency:</strong> Ingestion pipelines that handle mostly-ordered logs can
+                    process the same throughput with fewer GPUs.</li>
+                <li><strong>Stability at Scale:</strong> Deterministic "no-OOM" behavior at scales (6B–7B keys)
+                    where generic radix sort fails, preventing "poison pill" queries from crashing nodes.</li>
+            </ul>
+
+            <h2>Why Data Oblivious Sorting Hurts Real Systems</h2>
+
+            <p>Sorting is not a toy benchmark. It's how we:</p>
+
+            <ul>
+                <li>Build and maintain indices.</li>
+                <li>Merge streams in observability and logging stacks.</li>
+                <li>Keep HFT order books coherent under extreme load.</li>
+                <li>Compact, dedupe, and re-shard time series and feature stores.</li>
+            </ul>
+
+            <p>The traditional GPU story has been simple: "call CUB DeviceRadixSort and move on." And to be clear:
+                CUB is excellent at what it's designed for. It is ruthlessly optimized for worst-case entropy. Give
+                it uniformly random 64-bit keys and it will happily chew through billions of them.</p>
+
+            <p>But that is not what your production data usually looks like:</p>
+
+            <ul>
+                <li>HFT pipelines ingest long stretches of almost-sorted ticks, interrupted by local bursts of
+                    disorder.</li>
+                <li>Observability stacks append new events to already-ordered partitions.</li>
+                <li>Time-series tables are dominated by monotonic timestamps, with occasional late arrivals and
+                    backfills.</li>
+            </ul>
+
+            <p>In other words, <strong>your data has a topology</strong>. It carries structure over time. It
+                remembers where it came from.</p>
+
+            <h2>The Iron: Blackwell GB10, Straight Up</h2>
+
+            <p>All of the results in this article come from a single, straightforward environment:</p>
+
+            <ul>
+                <li><strong>GPU:</strong> NVIDIA Blackwell GB10, compute capability 12.1</li>
+                <li><strong>SMs:</strong> 48</li>
+                <li><strong>Memory:</strong> HBM3e (~8 TB/s theoretical bandwidth)</li>
+                <li><strong>Software:</strong> CUDA 13.0, NVIDIA driver 565.57.01, Linux 6.11 series kernel</li>
+            </ul>
+
+            <p><strong>Build configuration (simplified):</strong></p>
+
+            <pre><code>nvcc -std=c++20 -O3 -arch=sm_121 --expt-relaxed-constexpr -o mash_benchmark main.cu</code></pre>
+
+            <h2>What the Scoreboard Actually Says</h2>
+
+            <p>Here's the high-level picture across 100M, 1B, and 3B 64 bit keys:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Distribution</th>
+                        <th>100M Elements</th>
+                        <th>1B Elements</th>
+                        <th>3B Elements</th>
+                        <th>Geometric Mean</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Presorted</strong></td>
+                        <td>8.13×</td>
+                        <td>9.06×</td>
+                        <td>8.76×</td>
+                        <td>8.64×</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Reverse</strong></td>
+                        <td>3.88×</td>
+                        <td>4.53×</td>
+                        <td>4.49×</td>
+                        <td>4.29×</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Uniform</strong></td>
+                        <td>1.49×</td>
+                        <td>1.38×</td>
+                        <td>1.35×</td>
+                        <td>1.41×</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Zipfian</strong></td>
+                        <td>1.34×</td>
+                        <td>1.33×</td>
+                        <td>1.31×</td>
+                        <td>1.33×</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>The Scale Ceiling: 7 Billion Keys (MASH vs. OOM)</h2>
+
+            <p>3B keys on a single GPU is where abstractions start to get very real. 7B keys are where they break.</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Scale</th>
+                        <th>Elements</th>
+                        <th>CUB Radix (ms)</th>
+                        <th>MASH (ms)</th>
+                        <th>Speedup</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>4B</strong></td>
+                        <td>4.0×10⁹</td>
+                        <td>4196.65</td>
+                        <td>442.52</td>
+                        <td><strong>9.48×</strong></td>
+                        <td>Both Succeed</td>
+                    </tr>
+                    <tr>
+                        <td><strong>5B</strong></td>
+                        <td>5.0×10⁹</td>
+                        <td>5109.51</td>
+                        <td>560.96</td>
+                        <td><strong>9.11×</strong></td>
+                        <td>Both Succeed</td>
+                    </tr>
+                    <tr>
+                        <td><strong>6B</strong></td>
+                        <td>6.0×10⁹</td>
+                        <td><strong>OOM (Crash)</strong></td>
+                        <td>653.52</td>
+                        <td><strong>∞</strong></td>
+                        <td>MASH Wins</td>
+                    </tr>
+                    <tr>
+                        <td><strong>7B</strong></td>
+                        <td>7.0×10⁹</td>
+                        <td><strong>OOM (Crash)</strong></td>
+                        <td>769.61</td>
+                        <td><strong>∞</strong></td>
+                        <td>MASH Wins</td>
+                    </tr>
+                    <tr>
+                        <td><strong>8B</strong></td>
+                        <td>8.0×10⁹</td>
+                        <td><strong>OOM (Crash)</strong></td>
+                        <td><strong>Graceful Exit</strong></td>
+                        <td><strong>-</strong></td>
+                        <td>MASH Rejects</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p>At 6B and 7B keys, CUB fails to allocate the necessary temporary buffers and crashes the workload.
+                MASH detects the presorted structure and routes to an in-place verification path, gracefully exiting
+                immediately, and requiring <strong>zero additional allocation</strong>.</p>
+
+            <p>The result is not just a speedup; it is a <strong>capability gain</strong>. MASH can process datasets
+                40% larger than Nvidia CUB, the industry's best library, on the exact same hardware.</p>
+
+            <h2>Why This Matters (and What I'm Not Saying Yet)</h2>
+
+            <p>This isn't "I shaved 7% off a toy benchmark." This is:</p>
+
+            <ul>
+                <li>A <strong>~9× reduction in latency</strong> on the most common "nice" workloads (presorted 1B–3B).</li>
+                <li>A <strong>>4× win</strong> on reverse segments you can't avoid in the real world.</li>
+                <li>A <strong>30–50% improvement</strong> even on adversarial or skewed distributions.</li>
+                <li>A design that treats topology as a first-class signal on modern GPUs instead of pretending every
+                    batch is white noise.</li>
+            </ul>
+
+            <p>For GPU-backed databases, observability stacks, and HFT infra, that's the difference between needing
+                <strong>N GPUs versus N/2</strong> for the same SLA when sort-heavy operations dominate.</p>
+
+            <p>If you own or work on:</p>
+
+            <ul>
+                <li>A GPU-accelerated analytics or time series service,</li>
+                <li>A trading / HFT stack that already pushes CUB to the edge, or</li>
+                <li>A database / query engine team exploring GPU paths,</li>
+            </ul>
+
+            <p>I'd be very interested in your critiques, your worst-case traces, and your sense of where something
+                like this would actually move the needle.</p>
+
+            
+            <div class="mt-16 pt-12 border-t border-gray-800 text-center">
+                <div class="bg-gray-900/50 rounded-lg p-8 border border-green-900/30">
+                    <p class="text-xl text-gray-300 mb-6">
+                        Interested in GPU-native infrastructure or want to run these benchmarks in your stack?
+                    </p>
+                    <a href="/#contact"
+                        class="inline-block bg-voxell-green text-black font-bold py-3 px-8 rounded hover:bg-voxell-green-dark transition-all duration-300 glow-green transform hover:scale-105">
+                        Get in Touch
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</article>
+
+        <footer class="py-16 bg-black border-t border-voxell-gray/30">
+    <div class="container mx-auto px-6">
+        <div class="grid md:grid-cols-4 gap-12 mb-12">
+            <div class="md:col-span-1">
+                <a href="/" class="flex items-center text-2xl font-bold font-mono text-voxell-green">
+                    <img src="/logo-transparent.svg" alt="Voxell" class="h-6 w-6 mr-2">
+                    VOXELL
+                </a>
+                <p class="text-gray-400 mt-4 text-sm leading-relaxed">
+                    GPU-native infrastructure for real-time AI systems.
+                </p>
+            </div>
+
+            <div>
+                <p class="text-white font-semibold mb-4">Products</p>
+                <ul class="space-y-3">
+                    
+                    
+                    <li><a href="/forge/" class="text-white font-semibold hover:text-voxell-green transition-colors text-sm">Forge</a></li>
+                    
+                    <li><a href="/products/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">All Products</a></li>
+                    <li><a href="/design-partners/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Design Partners</a></li>
+                    
+                    <li><a href="/lux/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Lux</a></li>
+                    
+                    <li><a href="/coherence/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Coherence</a></li>
+                    
+                    <li><a href="/mash/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">MASH</a></li>
+                    
+                    <li><a href="/art/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">ART</a></li>
+                    
+                    <li><a href="/arc/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">ARC</a></li>
+                    
+                </ul>
+            </div>
+
+            <div>
+                <p class="text-white font-semibold mb-4">Engineering</p>
+                <ul class="space-y-3">
+                    <li><a href="/engineering/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">All Articles</a></li>
+                    
+                    
+                    <li><a href="/engineering/qwen-native-cuda-engine/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Ripping Out TEI</a></li>
+                    
+                    
+                    
+                    <li><a href="/engineering/ingot_poured/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Ingot Poured</a></li>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+            </div>
+
+            <div>
+                <p class="text-white font-semibold mb-4">Company</p>
+                <ul class="space-y-3">
+                    <li><a href="/about/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">About</a></li>
+                    <li><a href="/docs/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Docs</a></li>
+                    <li><a href="/support/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Support</a></li>
+                    <li><a href="/#contact" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Contact</a></li>
+                    <li><a href="https://playground.voxell.ai" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Playground</a></li>
+                    <li><a href="https://dash.voxell.ai" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Dashboard</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="border-t border-voxell-gray/30 pt-8">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                <div class="flex items-center gap-4">
+                    <img src="/nvidia-inception-badge.svg" alt="NVIDIA Inception Program badge" class="h-12 w-auto">
+                    <div>
+                        <p class="text-gray-500 text-xs font-mono uppercase tracking-wider">Program Member</p>
+                        <p class="text-gray-300 text-sm font-semibold">Member of NVIDIA Inception</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 mt-4 md:mt-0">
+                    <a href="/terms/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Terms</a>
+                    <a href="/privacy/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Privacy</a>
+                    <span class="text-gray-400 text-sm">California, USA</span>
+                </div>
+            </div>
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 text-sm">&copy; 2026 Voxell Inc. All rights reserved.</p>
+                <p class="text-gray-600 text-xs mt-2 md:mt-0">&copy; 2025 NVIDIA, the NVIDIA logo, Blackwell, CUDA, DGX, and NVIDIA Inception are trademarks and/or registered trademarks of NVIDIA Corporation in the U.S. and other countries.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    if (mobileMenuBtn && mobileMenu) {
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        document.querySelectorAll('#mobile-menu a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+    }
+</script>
+
+    </main>
+
+    
+    <script>
+    
+    (function() {
+        const toggle = document.querySelector('[data-drawer-toggle]');
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.createElement('div');
+        backdrop.className = 'fixed inset-0 bg-black/50 z-30 sm:hidden hidden';
+        backdrop.id = 'sidebar-backdrop';
+        document.body.appendChild(backdrop);
+
+        function closeSidebar() {
+            sidebar.classList.add('-translate-x-full');
+            sidebar.classList.remove('translate-x-0');
+            backdrop.classList.add('hidden');
+        }
+
+        toggle?.addEventListener('click', function() {
+            const isOpen = sidebar.classList.contains('translate-x-0');
+            if (isOpen) {
+                closeSidebar();
+            } else {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+                backdrop.classList.remove('hidden');
+            }
+        });
+
+        backdrop.addEventListener('click', closeSidebar);
+
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && sidebar.classList.contains('translate-x-0')) {
+                closeSidebar();
+            }
+        });
+    })();
+
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const params = new URLSearchParams(window.location.search);
+        const fields = {
+            'page_path': window.location.pathname,
+            'page_url': window.location.href,
+            'referrer': document.referrer || '',
+            'utm_source': params.get('utm_source') || '',
+            'utm_medium': params.get('utm_medium') || '',
+            'utm_campaign': params.get('utm_campaign') || '',
+            'utm_content': params.get('utm_content') || '',
+            'utm_term': params.get('utm_term') || '',
+            'gclid': params.get('gclid') || '',
+            'fbclid': params.get('fbclid') || ''
+        };
+        document.querySelectorAll('input.attr-field').forEach(function(input) {
+            if (fields[input.name]) input.value = fields[input.name];
+        });
+    });
+    </script>
+
+    
+    
+    <script>
+    (function(){
+        var EP = "https:\/\/beacon.voxell.ai\/b";
+        function send(kind, label){
+            try {
+                var data = JSON.stringify({
+                    k: kind,
+                    p: location.pathname,
+                    r: document.referrer || "",
+                    l: label || ""
+                });
+                
+                navigator.sendBeacon(EP, new Blob([data], { type: "text/plain" }));
+            } catch (e) {}
+        }
+        send("pv");
+        document.addEventListener("click", function(ev){
+            var el = ev.target.closest("[data-track]");
+            if (el) send("click", el.getAttribute("data-track"));
+        }, true);
+    })();
+    </script>
+    
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"153b051d126b4df483cd2568eeae771f","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

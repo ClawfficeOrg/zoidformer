@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+<meta name="robots" content="index, follow">
+<meta property="og:site_name" content="Voxell">
+<meta name="theme-color" content="#00ff41">
+<meta name="msvalidate.01" content="1557C284145DFDE8DF75783055FC0CBC">
+
+
+
+<link rel="preload" href="/css/main.css" as="style">
+<link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+<link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
+
+<style>
+     
+    @font-face {
+        font-family: 'Space Grotesk';
+        font-style: normal;
+        font-weight: 400 700;
+        font-display: swap;
+        src: url(/fonts/space-grotesk-latin.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+        font-family: 'JetBrains Mono';
+        font-style: normal;
+        font-weight: 400 700;
+        font-display: swap;
+        src: url(/fonts/jetbrains-mono-latin.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    html, body {
+         
+        overflow-x: clip;
+    }
+    body {
+        font-family: 'Space Grotesk', sans-serif;
+        background-color: #000;
+        color: #e0e0e0;
+        margin: 0;
+    }
+    .antialiased { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    .bg-black { background-color: #000; }
+    .gradient-text {
+        background: linear-gradient(135deg, #00ff41 0%, #00cc33 50%, #00ff41 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .glow-green { box-shadow: 0 0 30px rgba(0,255,65,0.3), 0 0 60px rgba(0,255,65,0.1); }
+</style>
+
+
+
+
+
+<link href="/css/main.css" rel="stylesheet">
+
+    
+    <title>The Cache Feedback Gap: Why Your Prefetcher Doesn&#39;t Learn | Voxell</title>
+    <meta name="description" content="Your retrieval cache predicts what to preload and never learns if it was right. The open-loop problem, and what closing the feedback loop unlocks.">
+    <link rel="canonical" href="https://voxell.ai/engineering/cache-feedback-gap/">
+
+    
+    <meta property="og:title" content="The Cache Feedback Gap: Why Your Prefetcher Doesn&#39;t Learn | Voxell">
+    
+
+    
+    
+    
+    
+
+    <meta property="og:description" content="Your retrieval cache predicts what to preload and never learns if it was right. The open-loop problem, and what closing the feedback loop unlocks.">
+    <meta property="og:url" content="https://voxell.ai/engineering/cache-feedback-gap/">
+    <meta property="og:type" content="article">
+
+    <meta property="og:image" content="https://voxell.ai/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The Cache Feedback Gap: Why Your Prefetcher Doesn&#39;t Learn | Voxell">
+    <meta name="twitter:description" content="Your retrieval cache predicts what to preload and never learns if it was right. The open-loop problem, and what closing the feedback loop unlocks.">
+    <meta name="twitter:image" content="https://voxell.ai/og-image.png">
+
+    
+
+
+
+
+
+
+
+
+
+
+
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "author": {
+    "@type": "Person",
+    "name": "Jonathan Corners"
+  },
+  "dateModified": "2026-01-02T00:00:00Z",
+  "datePublished": "2026-01-02T00:00:00Z",
+  "description": "Your retrieval cache predicts what to preload and never learns if it was right. The open-loop problem, and what closing the feedback loop unlocks.",
+  "headline": "The Cache Feedback Gap: Why Your Prefetcher Doesn't Learn",
+  "image": "https://voxell.ai/og-image.png",
+  "mainEntityOfPage": {
+    "@id": "https://voxell.ai/engineering/cache-feedback-gap/",
+    "@type": "WebPage"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://voxell.ai/logo-transparent.svg"
+    },
+    "name": "Voxell"
+  }
+}</script>
+
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "item": "https://voxell.ai/",
+      "name": "Home",
+      "position": 1
+    },
+    {
+      "@type": "ListItem",
+      "item": "https://voxell.ai/engineering/",
+      "name": "Engineering",
+      "position": 2
+    },
+    {
+      "@type": "ListItem",
+      "item": "https://voxell.ai/engineering/cache-feedback-gap/",
+      "name": "The Cache Feedback Gap: Why Your Prefetcher Doesn't Learn",
+      "position": 3
+    }
+  ]
+}</script>
+
+
+
+
+    
+
+<style>
+     
+    .prose h1, .prose h2, .prose h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        color: #fff;
+        margin-top: 2em;
+        margin-bottom: 1em;
+    }
+
+    .prose h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(90deg, #00ff41, #00cc33);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .prose h2 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        border-bottom: 1px solid #1a1a1a;
+        padding-bottom: 0.5rem;
+    }
+
+    .prose h3 {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #00ff41;
+    }
+
+    .prose p {
+        margin-bottom: 1.5em;
+        line-height: 1.8;
+        color: #d1d5db;
+    }
+
+    .prose strong {
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .prose em {
+        color: #a855f7;
+        font-style: italic;
+    }
+
+    .prose ul, .prose ol {
+        margin-bottom: 1.5em;
+        padding-left: 1.5em;
+    }
+
+    .prose li {
+        margin-bottom: 0.5em;
+        color: #d1d5db;
+        line-height: 1.7;
+    }
+
+    .prose ul li::marker {
+        color: #00ff41;
+    }
+
+    .prose ol li::marker {
+        color: #00ff41;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .prose blockquote {
+        border-left: 3px solid #6b21a8;
+        padding-left: 1.5em;
+        margin: 1.5em 0;
+        color: #9ca3af;
+        font-style: italic;
+    }
+
+    .prose table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 2em 0;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9em;
+    }
+
+    .prose th {
+        text-align: left;
+        border-bottom: 1px solid #00ff41;
+        padding: 1rem;
+        color: #00ff41;
+    }
+
+    .prose td {
+        border-bottom: 1px solid #1a1a1a;
+        padding: 1rem;
+        color: #d1d5db;
+    }
+
+    .prose tr:hover td {
+        background-color: #0a0a0a;
+    }
+
+    .prose code {
+        background-color: #0a0a0a;
+        padding: 0.2em 0.4em;
+        border-radius: 4px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9em;
+        color: #00ff41;
+        border: 1px solid #1a1a1a;
+    }
+
+    .prose pre {
+        background-color: #0a0a0a;
+        padding: 1.5em;
+        overflow-x: auto;
+        border: 1px solid #1a1a1a;
+        border-radius: 8px;
+        margin: 1.5em 0;
+    }
+
+    .prose pre code {
+        background-color: transparent;
+        border: none;
+        padding: 0;
+        color: #d1d5db;
+        font-size: 0.85em;
+        line-height: 1.6;
+    }
+
+    .prose a {
+        color: #00ff41;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        transition: color 0.2s ease;
+    }
+
+    .prose a:hover {
+        color: #fff;
+    }
+
+    .prose hr {
+        border: none;
+        border-top: 1px solid #1a1a1a;
+        margin: 3em 0;
+    }
+
+     
+    .prose pre .comment { color: #6b7280; }
+    .prose pre .keyword { color: #a855f7; }
+    .prose pre .string { color: #fbbf24; }
+    .prose pre .number { color: #00ff41; }
+</style>
+
+
+</head>
+
+<body class="antialiased bg-black">
+    <nav class="fixed top-0 z-50 w-full bg-black border-b border-gray-800">
+    <div class="px-3 py-3 lg:px-5 lg:pl-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center justify-start">
+                
+                <button data-drawer-target="sidebar" data-drawer-toggle="sidebar" aria-controls="sidebar" type="button" class="inline-flex items-center p-2 text-sm text-gray-400 rounded-lg sm:hidden hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-600">
+                    <span class="sr-only">Open sidebar</span>
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path></svg>
+                </button>
+                
+                <a href="/" class="flex items-center ms-2 md:me-24">
+                    <img src="/logo-transparent.svg" alt="Voxell" class="h-6 w-6 mr-2">
+                    <span class="self-center text-xl font-semibold sm:text-2xl text-voxell-green font-mono">VOXELL</span>
+                </a>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <a href="/forge/" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Forge
+                </a>
+                <a href="/answers/" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Answers
+                </a>
+                <a href="/forge/recipes/" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Recipes
+                </a>
+                <a href="https://playground.voxell.ai" target="_blank" rel="noopener noreferrer" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Playground
+                </a>
+                <a href="https://dash.voxell.ai/login" target="_blank" rel="noopener noreferrer" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Log In
+                </a>
+                <a href="/contact/" class="px-4 py-2 text-sm font-medium border border-voxell-green text-voxell-green rounded-lg hover:bg-voxell-green hover:text-black transition-colors font-semibold">
+                    Contact
+                </a>
+                <a href="https://dash.voxell.ai/pricing" target="_blank" rel="noopener noreferrer" class="px-4 py-2 text-sm font-medium bg-voxell-green text-black rounded-lg hover:bg-voxell-green-dark transition-colors font-semibold">
+                    Pricing
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+    <aside id="sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-transform -translate-x-full bg-black border-r border-gray-800 sm:translate-x-0" aria-label="Sidebar">
+    <div class="h-full px-3 pb-4 overflow-y-auto bg-black">
+        <ul class="space-y-2 font-medium">
+            
+            <li>
+                <a href="/products/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-2 h-2 rounded-full border border-gray-400 bg-gray-700 group-hover:border-white group-hover:bg-gray-500"></span>
+                    <span class="ms-3">Products</span>
+                </a>
+            </li>
+            <li>
+                <a href="/forge/" class="flex items-center p-2 rounded-lg group text-sm ps-4 font-semibold text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Forge</span>
+                </a>
+            </li>
+            <li>
+                <a href="/answers/" class="flex items-center p-2 rounded-lg group text-sm ps-4 font-semibold text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Answers</span>
+                </a>
+            </li>
+            <li>
+                <a href="/ore/" class="flex items-center p-2 rounded-lg group text-sm ps-4 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Ore</span>
+                </a>
+            </li>
+            
+            
+
+            
+            
+            <li class="pt-3 mt-2 border-t border-gray-800/70">
+                <a href="/design-partners/" class="flex items-center p-2 rounded-lg group text-xs font-mono font-bold uppercase tracking-wider ps-4 text-gray-500 hover:bg-gray-900 hover:text-white">
+                    <span class="ms-3">Design Partner</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/lux/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Lux</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/coherence/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Coherence</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/mash/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">MASH</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/art/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">ART</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/arc/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">ARC</span>
+                </a>
+            </li>
+            
+            
+
+            
+            <li class="pt-4 mt-4 border-t border-gray-800">
+                <a href="/engineering/" class="flex items-center p-2 rounded-lg group text-voxell-green bg-gray-900">
+                    <span class="w-2 h-2 rounded-full border bg-voxell-green border-voxell-green"></span>
+                    <span class="ms-3">Engineering</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/qwen-native-cuda-engine/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Ripping Out TEI</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/ingot_poured/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Ingot Poured</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/cache-feedback-gap/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Cache Feedback Gap</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/rag-pipeline-feedback/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">RAG Feedback Loop</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/starved-cores/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Starved Cores</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/graph-traversal-anti-pattern/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Memory Abuse</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/deterministic-embeddings/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Why Vector Search Lies</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/mash/sorting-on-blackwell/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">MASH Sort</span>
+                </a>
+            </li>
+            
+
+            
+            <li class="pt-4 mt-4 border-t border-gray-800">
+                <a href="#" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-2 h-2 rounded-full border border-gray-400 bg-gray-700 group-hover:border-white group-hover:bg-gray-500"></span>
+                    <span class="ms-3">Standards</span>
+                </a>
+            </li>
+            <li>
+                <a href="/hint/" class="flex items-center p-2 rounded-lg group text-sm ps-4 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">HINT Protocol</span>
+                </a>
+            </li>
+
+            
+            <li class="pt-4 mt-4 border-t border-gray-800">
+                <a href="/about/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-2 h-2 rounded-full border border-gray-400 bg-gray-700 group-hover:border-white group-hover:bg-gray-500"></span>
+                    <span class="ms-3">About</span>
+                </a>
+            </li>
+
+            
+            <li class="pt-4 mt-4 border-t border-gray-800">
+                <a href="/blog/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-2 h-2 rounded-full border border-gray-400 bg-gray-700 group-hover:border-white group-hover:bg-gray-500"></span>
+                    <span class="ms-3">Blog</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/vbms-journey-scoring/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Quality Scoring</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/eight-weeks/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Eight Weeks to #1</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/vectors-are-not-ontologies/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Vectors Are Not Ontologies</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/your-vector-database-is-a-coping-mechanism/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Vector DB Is a Coping Mechanism</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/cssguard-bidirectional-validation/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">CSSGuard</span>
+                </a>
+            </li>
+            
+        </ul>
+    </div>
+</aside>
+
+
+    <main class="sm:ml-64 pt-16">
+        
+
+
+<section class="pt-32 pb-12 bg-black">
+    <div class="container mx-auto px-6">
+        <div class="max-w-3xl mx-auto">
+            
+            <a href="/engineering/" class="inline-flex items-center gap-2 text-gray-400 hover:text-voxell-green transition-colors mb-8 font-mono text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Engineering Insights
+            </a>
+
+            
+            <h1 class="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">
+                The Cache Feedback Gap: Why Your Prefetcher Doesn&#39;t Learn
+            </h1>
+
+            
+            <div class="flex items-center gap-4 text-gray-400 font-mono text-sm mb-8">
+                <span>Jonathan Corners</span>
+                <span class="text-gray-700">|</span>
+                <span>January 2026</span>
+            </div>
+
+            
+            <p class="text-xl text-gray-400 leading-relaxed border-l-2 border-purple-500 pl-6">
+                Your retrieval cache predicts what to preload and never learns if it was right. The open-loop problem, and what closing the feedback loop unlocks.
+            </p>
+        </div>
+    </div>
+</section>
+
+
+
+
+<section class="py-12 bg-black">
+    <div class="container mx-auto px-6">
+        <article class="max-w-3xl mx-auto prose">
+            <h2 id="the-cache-that-guesses-and-forgets">The Cache That Guesses and Forgets</h2>
+<p>Your retrieval pipeline caches embeddings. It has to: recomputing a vector for a document you&rsquo;ve already indexed is wasteful, and at scale, it&rsquo;s fatal to latency. So you cache. The cache warms up. You congratulate yourself.</p>
+<p>Then you look more carefully. Your cache doesn&rsquo;t know which of its entries were ever retrieved. It doesn&rsquo;t know which cached vectors are still semantically correct versus stale from a model update. It doesn&rsquo;t know which prefetched entries were evicted without being used.</p>
+<p>The cache is guessing. And it has no way to find out if its guesses were right.</p>
+<p>This is the cache feedback gap. It&rsquo;s not specific to embeddings. It&rsquo;s a structural problem that runs across every prefetching system in the stack.</p>
+<h2 id="the-prefetch-graveyard">The Prefetch Graveyard</h2>
+<p>Consider how prefetching fails across the stack:</p>
+<p><strong>HTTP/2 Server Push</strong>: The server pushes assets it predicts the client will need: JavaScript bundles, CSS, fonts. The client already has them cached. 500KB sent, discarded. The server does the same thing on the next request. Chrome dropped Server Push support in 2022 because the absence of feedback made it more harmful than useful.</p>
+<p><strong>CDN prefetching</strong>: CDNs analyze access patterns and speculatively warm edge caches. When they prefetch assets that never get requested, the only signal is a cache eviction log that nobody reads. The prefetcher never adapts.</p>
+<p><strong>Database query caching</strong>: Query caches store results for repeated queries. They don&rsquo;t anticipate related queries. Fetching a user record doesn&rsquo;t pre-warm the cache for that user&rsquo;s recent documents, even if the access pattern is predictable. The cache waits to be asked.</p>
+<p><strong>Embedding prefetch</strong>: You predict that users searching topic A will also search topic B. You preload B&rsquo;s embedding vectors. If the prediction was wrong, those vectors occupy cache until eviction. You never know how often you were wrong.</p>
+<p>All of these systems share one structural flaw: <strong>they&rsquo;re open-loop</strong>. They make predictions. They don&rsquo;t learn from outcomes.</p>
+<h2 id="whats-missing-the-feedback-signal">What&rsquo;s Missing: The Feedback Signal</h2>
+<p>Imagine if your prefetcher worked like a recommendation system. Every prediction would have an identifier. Every outcome would be tracked. The system would learn which predictions were useful and which were waste.</p>
+<p>The missing piece is a standardized feedback signal, one that can report:</p>
+<table>
+  <thead>
+      <tr>
+          <th>Outcome</th>
+          <th>Meaning</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td><strong>HIT</strong></td>
+          <td>The prefetched data was used. Latency was saved.</td>
+      </tr>
+      <tr>
+          <td><strong>MISS</strong></td>
+          <td>The data wasn&rsquo;t prefetched, but was subsequently needed.</td>
+      </tr>
+      <tr>
+          <td><strong>EVICTED_UNUSED</strong></td>
+          <td>The data was prefetched, cached, and evicted without being accessed.</td>
+      </tr>
+      <tr>
+          <td><strong>STALE_HIT</strong></td>
+          <td>The prefetched data was used but was stale.</td>
+      </tr>
+  </tbody>
+</table>
+<p>The <code>EVICTED_UNUSED</code> signal is the most valuable. It identifies pure waste: bandwidth consumed, cache space occupied, no benefit. A prefetcher that sees repeated <code>EVICTED_UNUSED</code> outcomes for a pattern should stop predicting it. An open-loop prefetcher never receives this signal and keeps making the same mistake indefinitely.</p>
+<p>With this taxonomy, a predictive cache can correlate every proactive decision with its outcome. Patterns that produce HITs get reinforced. Patterns that produce EVICTED_UNUSED get suppressed. The cache improves over time instead of running on static rules.</p>
+<h2 id="closing-the-loop">Closing the Loop</h2>
+<p>The open-loop problem has a straightforward structural fix: give every prediction an identifier, and provide a mechanism for the outcome to be reported against that identifier.</p>
+<p>This is the core principle behind the <a href="/hint/">HINT protocol</a>: predictions are tagged, outcomes flow back, the prediction model adapts. It&rsquo;s transport-agnostic: the same pattern works over HTTP headers, GraphQL extensions, or gRPC metadata. The mechanism is simple. The value is in building the feedback path as a first-class concern rather than an afterthought.</p>
+<h2 id="arc">ARC</h2>
+<p><a href="/arc/">ARC</a> is Voxell&rsquo;s closed-loop vector cache, built on this model. Every cache operation produces a prediction identifier. Outcomes (HIT, MISS, EVICTED_UNUSED) flow back and feed the prediction model. ARC adapts across requests, not just within them.</p>
+<p>There&rsquo;s a structural prerequisite that most caching systems ignore: the feedback loop only works if your embeddings are reproducible. If the same document produces different vectors across service restarts, library upgrades, or hardware failovers, your prediction identifiers become unreliable. A HIT and a MISS for semantically identical queries will correspond to different vector representations. The correlation between prediction and outcome is broken before any learning can happen.</p>
+<p>This is why ARC is built on deterministic embeddings. Bit-exact vector computation is not a nice-to-have for a closed-loop cache. It&rsquo;s a correctness requirement. Without it, you&rsquo;re teaching the prediction model with a corrupted training signal.</p>
+<p>The cache feedback gap has persisted because feedback was treated as optional. ARC closes it by treating feedback as the point.</p>
+<p><em>ARC is part of Voxell&rsquo;s infrastructure layer. The HINT specification is available at <a href="/hint/">/hint/</a>. ARC and <a href="/art/">ART</a> implement HINT natively.</em></p>
+
+        </article>
+    </div>
+</section>
+
+
+<section class="py-12 bg-black">
+    <div class="container mx-auto px-6">
+        <div class="max-w-3xl mx-auto">
+            <div class="border border-voxell-gray rounded-xl p-8 bg-voxell-dark/30">
+                <h3 class="text-sm font-mono text-voxell-green uppercase tracking-wider mb-4">Author</h3>
+                <p class="text-gray-300 mb-3 leading-relaxed">
+                    Jonathan Corners - Founder, Voxell. I build GPU-native infrastructure for real-time AI systems.
+                </p>
+                <p class="text-gray-400 mb-6 leading-relaxed">
+                    If you're working on latency + consistency problems, I'd like to hear about it.
+                </p>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <a href="/#contact" class="inline-flex items-center justify-center gap-2 bg-voxell-green text-black font-bold py-3 px-6 rounded-lg hover:bg-voxell-green-dark transition-all duration-300">
+                        Contact
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                        </svg>
+                    </a>
+                    <span class="text-gray-400 text-xs">24h reply • NDA ok • No IP needed</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+<section class="py-16 bg-voxell-dark border-t border-voxell-gray/30">
+    <div class="container mx-auto px-6">
+        <div class="max-w-3xl mx-auto">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6 p-8 bg-black/50 border border-voxell-gray rounded-xl">
+                <div>
+                    <p class="text-white font-semibold mb-1">Ready to see this in practice?</p>
+                    <p class="text-gray-400 text-sm">Get hands-on with Voxell Coherence.</p>
+                </div>
+                <a href="/#contact" class="inline-flex items-center gap-2 bg-voxell-green text-black font-bold py-3 px-6 rounded-lg hover:bg-voxell-green-dark transition-all duration-300">
+                    Request Access
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+        <footer class="py-16 bg-black border-t border-voxell-gray/30">
+    <div class="container mx-auto px-6">
+        <div class="grid md:grid-cols-4 gap-12 mb-12">
+            <div class="md:col-span-1">
+                <a href="/" class="flex items-center text-2xl font-bold font-mono text-voxell-green">
+                    <img src="/logo-transparent.svg" alt="Voxell" class="h-6 w-6 mr-2">
+                    VOXELL
+                </a>
+                <p class="text-gray-400 mt-4 text-sm leading-relaxed">
+                    GPU-native infrastructure for real-time AI systems.
+                </p>
+            </div>
+
+            <div>
+                <p class="text-white font-semibold mb-4">Products</p>
+                <ul class="space-y-3">
+                    
+                    
+                    <li><a href="/forge/" class="text-white font-semibold hover:text-voxell-green transition-colors text-sm">Forge</a></li>
+                    
+                    <li><a href="/products/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">All Products</a></li>
+                    <li><a href="/design-partners/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Design Partners</a></li>
+                    
+                    <li><a href="/lux/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Lux</a></li>
+                    
+                    <li><a href="/coherence/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Coherence</a></li>
+                    
+                    <li><a href="/mash/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">MASH</a></li>
+                    
+                    <li><a href="/art/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">ART</a></li>
+                    
+                    <li><a href="/arc/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">ARC</a></li>
+                    
+                </ul>
+            </div>
+
+            <div>
+                <p class="text-white font-semibold mb-4">Engineering</p>
+                <ul class="space-y-3">
+                    <li><a href="/engineering/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">All Articles</a></li>
+                    
+                    
+                    <li><a href="/engineering/qwen-native-cuda-engine/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Ripping Out TEI</a></li>
+                    
+                    
+                    
+                    <li><a href="/engineering/ingot_poured/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Ingot Poured</a></li>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+            </div>
+
+            <div>
+                <p class="text-white font-semibold mb-4">Company</p>
+                <ul class="space-y-3">
+                    <li><a href="/about/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">About</a></li>
+                    <li><a href="/docs/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Docs</a></li>
+                    <li><a href="/support/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Support</a></li>
+                    <li><a href="/#contact" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Contact</a></li>
+                    <li><a href="https://playground.voxell.ai" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Playground</a></li>
+                    <li><a href="https://dash.voxell.ai" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Dashboard</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="border-t border-voxell-gray/30 pt-8">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                <div class="flex items-center gap-4">
+                    <img src="/nvidia-inception-badge.svg" alt="NVIDIA Inception Program badge" class="h-12 w-auto">
+                    <div>
+                        <p class="text-gray-500 text-xs font-mono uppercase tracking-wider">Program Member</p>
+                        <p class="text-gray-300 text-sm font-semibold">Member of NVIDIA Inception</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 mt-4 md:mt-0">
+                    <a href="/terms/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Terms</a>
+                    <a href="/privacy/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Privacy</a>
+                    <span class="text-gray-400 text-sm">California, USA</span>
+                </div>
+            </div>
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 text-sm">&copy; 2026 Voxell Inc. All rights reserved.</p>
+                <p class="text-gray-600 text-xs mt-2 md:mt-0">&copy; 2025 NVIDIA, the NVIDIA logo, Blackwell, CUDA, DGX, and NVIDIA Inception are trademarks and/or registered trademarks of NVIDIA Corporation in the U.S. and other countries.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    if (mobileMenuBtn && mobileMenu) {
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        document.querySelectorAll('#mobile-menu a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+    }
+</script>
+
+    </main>
+
+    
+    <script>
+    
+    (function() {
+        const toggle = document.querySelector('[data-drawer-toggle]');
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.createElement('div');
+        backdrop.className = 'fixed inset-0 bg-black/50 z-30 sm:hidden hidden';
+        backdrop.id = 'sidebar-backdrop';
+        document.body.appendChild(backdrop);
+
+        function closeSidebar() {
+            sidebar.classList.add('-translate-x-full');
+            sidebar.classList.remove('translate-x-0');
+            backdrop.classList.add('hidden');
+        }
+
+        toggle?.addEventListener('click', function() {
+            const isOpen = sidebar.classList.contains('translate-x-0');
+            if (isOpen) {
+                closeSidebar();
+            } else {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+                backdrop.classList.remove('hidden');
+            }
+        });
+
+        backdrop.addEventListener('click', closeSidebar);
+
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && sidebar.classList.contains('translate-x-0')) {
+                closeSidebar();
+            }
+        });
+    })();
+
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const params = new URLSearchParams(window.location.search);
+        const fields = {
+            'page_path': window.location.pathname,
+            'page_url': window.location.href,
+            'referrer': document.referrer || '',
+            'utm_source': params.get('utm_source') || '',
+            'utm_medium': params.get('utm_medium') || '',
+            'utm_campaign': params.get('utm_campaign') || '',
+            'utm_content': params.get('utm_content') || '',
+            'utm_term': params.get('utm_term') || '',
+            'gclid': params.get('gclid') || '',
+            'fbclid': params.get('fbclid') || ''
+        };
+        document.querySelectorAll('input.attr-field').forEach(function(input) {
+            if (fields[input.name]) input.value = fields[input.name];
+        });
+    });
+    </script>
+
+    
+    
+    <script>
+    (function(){
+        var EP = "https:\/\/beacon.voxell.ai\/b";
+        function send(kind, label){
+            try {
+                var data = JSON.stringify({
+                    k: kind,
+                    p: location.pathname,
+                    r: document.referrer || "",
+                    l: label || ""
+                });
+                
+                navigator.sendBeacon(EP, new Blob([data], { type: "text/plain" }));
+            } catch (e) {}
+        }
+        send("pv");
+        document.addEventListener("click", function(ev){
+            var el = ev.target.closest("[data-track]");
+            if (el) send("click", el.getAttribute("data-track"));
+        }, true);
+    })();
+    </script>
+    
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"153b051d126b4df483cd2568eeae771f","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

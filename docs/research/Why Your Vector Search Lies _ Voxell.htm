@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+<meta name="robots" content="index, follow">
+<meta property="og:site_name" content="Voxell">
+<meta name="theme-color" content="#00ff41">
+<meta name="msvalidate.01" content="1557C284145DFDE8DF75783055FC0CBC">
+
+
+
+<link rel="preload" href="/css/main.css" as="style">
+<link rel="preload" href="/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/jetbrains-mono-latin.woff2" as="font" type="font/woff2" crossorigin>
+
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
+<link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
+
+<style>
+     
+    @font-face {
+        font-family: 'Space Grotesk';
+        font-style: normal;
+        font-weight: 400 700;
+        font-display: swap;
+        src: url(/fonts/space-grotesk-latin.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    @font-face {
+        font-family: 'JetBrains Mono';
+        font-style: normal;
+        font-weight: 400 700;
+        font-display: swap;
+        src: url(/fonts/jetbrains-mono-latin.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
+    html, body {
+         
+        overflow-x: clip;
+    }
+    body {
+        font-family: 'Space Grotesk', sans-serif;
+        background-color: #000;
+        color: #e0e0e0;
+        margin: 0;
+    }
+    .antialiased { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    .bg-black { background-color: #000; }
+    .gradient-text {
+        background: linear-gradient(135deg, #00ff41 0%, #00cc33 50%, #00ff41 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .glow-green { box-shadow: 0 0 30px rgba(0,255,65,0.3), 0 0 60px rgba(0,255,65,0.1); }
+</style>
+
+
+
+
+
+<link href="/css/main.css" rel="stylesheet">
+
+    
+    <title>Why Your Vector Search Lies | Voxell</title>
+    <meta name="description" content="Same query, different results. The floating-point problem that quietly breaks reproducible embeddings, and what bit-exact determinism takes in production.">
+    <link rel="canonical" href="https://voxell.ai/engineering/deterministic-embeddings/">
+
+    
+    <meta property="og:title" content="Why Your Vector Search Lies | Voxell">
+    
+
+    
+    
+    
+    
+
+    <meta property="og:description" content="Same query, different results. The floating-point problem that quietly breaks reproducible embeddings, and what bit-exact determinism takes in production.">
+    <meta property="og:url" content="https://voxell.ai/engineering/deterministic-embeddings/">
+    <meta property="og:type" content="article">
+
+    <meta property="og:image" content="https://voxell.ai/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Why Your Vector Search Lies | Voxell">
+    <meta name="twitter:description" content="Same query, different results. The floating-point problem that quietly breaks reproducible embeddings, and what bit-exact determinism takes in production.">
+    <meta name="twitter:image" content="https://voxell.ai/og-image.png">
+
+    
+
+
+
+
+
+
+
+
+
+
+
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "author": {
+    "@type": "Person",
+    "name": "Jonathan Corners"
+  },
+  "dateModified": "2026-01-01T00:00:00Z",
+  "datePublished": "2026-01-01T00:00:00Z",
+  "description": "Same query, different results. The floating-point problem that quietly breaks reproducible embeddings, and what bit-exact determinism takes in production.",
+  "headline": "Why Your Vector Search Lies",
+  "image": "https://voxell.ai/img/determinism-hero.webp",
+  "mainEntityOfPage": {
+    "@id": "https://voxell.ai/engineering/deterministic-embeddings/",
+    "@type": "WebPage"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://voxell.ai/logo-transparent.svg"
+    },
+    "name": "Voxell"
+  }
+}</script>
+
+<script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "item": "https://voxell.ai/",
+      "name": "Home",
+      "position": 1
+    },
+    {
+      "@type": "ListItem",
+      "item": "https://voxell.ai/engineering/",
+      "name": "Engineering",
+      "position": 2
+    },
+    {
+      "@type": "ListItem",
+      "item": "https://voxell.ai/engineering/deterministic-embeddings/",
+      "name": "Why Your Vector Search Lies",
+      "position": 3
+    }
+  ]
+}</script>
+
+
+
+
+    
+
+<style>
+     
+    .prose h1, .prose h2, .prose h3 {
+        font-family: 'Space Grotesk', sans-serif;
+        color: #fff;
+        margin-top: 2em;
+        margin-bottom: 1em;
+    }
+
+    .prose h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        background: linear-gradient(90deg, #00ff41, #00cc33);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .prose h2 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        border-bottom: 1px solid #1a1a1a;
+        padding-bottom: 0.5rem;
+    }
+
+    .prose h3 {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #00ff41;
+    }
+
+    .prose p {
+        margin-bottom: 1.5em;
+        line-height: 1.8;
+        color: #d1d5db;
+    }
+
+    .prose strong {
+        color: #fff;
+        font-weight: 600;
+    }
+
+    .prose em {
+        color: #a855f7;
+        font-style: italic;
+    }
+
+    .prose ul, .prose ol {
+        margin-bottom: 1.5em;
+        padding-left: 1.5em;
+    }
+
+    .prose li {
+        margin-bottom: 0.5em;
+        color: #d1d5db;
+        line-height: 1.7;
+    }
+
+    .prose ul li::marker {
+        color: #00ff41;
+    }
+
+    .prose ol li::marker {
+        color: #00ff41;
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    .prose blockquote {
+        border-left: 3px solid #6b21a8;
+        padding-left: 1.5em;
+        margin: 1.5em 0;
+        color: #9ca3af;
+        font-style: italic;
+    }
+
+    .prose table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 2em 0;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9em;
+    }
+
+    .prose th {
+        text-align: left;
+        border-bottom: 1px solid #00ff41;
+        padding: 1rem;
+        color: #00ff41;
+    }
+
+    .prose td {
+        border-bottom: 1px solid #1a1a1a;
+        padding: 1rem;
+        color: #d1d5db;
+    }
+
+    .prose tr:hover td {
+        background-color: #0a0a0a;
+    }
+
+    .prose code {
+        background-color: #0a0a0a;
+        padding: 0.2em 0.4em;
+        border-radius: 4px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9em;
+        color: #00ff41;
+        border: 1px solid #1a1a1a;
+    }
+
+    .prose pre {
+        background-color: #0a0a0a;
+        padding: 1.5em;
+        overflow-x: auto;
+        border: 1px solid #1a1a1a;
+        border-radius: 8px;
+        margin: 1.5em 0;
+    }
+
+    .prose pre code {
+        background-color: transparent;
+        border: none;
+        padding: 0;
+        color: #d1d5db;
+        font-size: 0.85em;
+        line-height: 1.6;
+    }
+
+    .prose a {
+        color: #00ff41;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        transition: color 0.2s ease;
+    }
+
+    .prose a:hover {
+        color: #fff;
+    }
+
+    .prose hr {
+        border: none;
+        border-top: 1px solid #1a1a1a;
+        margin: 3em 0;
+    }
+
+     
+    .prose pre .comment { color: #6b7280; }
+    .prose pre .keyword { color: #a855f7; }
+    .prose pre .string { color: #fbbf24; }
+    .prose pre .number { color: #00ff41; }
+</style>
+
+
+</head>
+
+<body class="antialiased bg-black">
+    <nav class="fixed top-0 z-50 w-full bg-black border-b border-gray-800">
+    <div class="px-3 py-3 lg:px-5 lg:pl-3">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center justify-start">
+                
+                <button data-drawer-target="sidebar" data-drawer-toggle="sidebar" aria-controls="sidebar" type="button" class="inline-flex items-center p-2 text-sm text-gray-400 rounded-lg sm:hidden hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-600">
+                    <span class="sr-only">Open sidebar</span>
+                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path clip-rule="evenodd" fill-rule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zm0 10.5a.75.75 0 01.75-.75h7.5a.75.75 0 010 1.5h-7.5a.75.75 0 01-.75-.75zM2 10a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 10z"></path></svg>
+                </button>
+                
+                <a href="/" class="flex items-center ms-2 md:me-24">
+                    <img src="/logo-transparent.svg" alt="Voxell" class="h-6 w-6 mr-2">
+                    <span class="self-center text-xl font-semibold sm:text-2xl text-voxell-green font-mono">VOXELL</span>
+                </a>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <a href="/forge/" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Forge
+                </a>
+                <a href="/answers/" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Answers
+                </a>
+                <a href="/forge/recipes/" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Recipes
+                </a>
+                <a href="https://playground.voxell.ai" target="_blank" rel="noopener noreferrer" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Playground
+                </a>
+                <a href="https://dash.voxell.ai/login" target="_blank" rel="noopener noreferrer" class="hidden md:inline-block px-4 py-2 text-sm font-medium text-gray-400 hover:text-voxell-green transition-colors">
+                    Log In
+                </a>
+                <a href="/contact/" class="px-4 py-2 text-sm font-medium border border-voxell-green text-voxell-green rounded-lg hover:bg-voxell-green hover:text-black transition-colors font-semibold">
+                    Contact
+                </a>
+                <a href="https://dash.voxell.ai/pricing" target="_blank" rel="noopener noreferrer" class="px-4 py-2 text-sm font-medium bg-voxell-green text-black rounded-lg hover:bg-voxell-green-dark transition-colors font-semibold">
+                    Pricing
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+    <aside id="sidebar" class="fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-transform -translate-x-full bg-black border-r border-gray-800 sm:translate-x-0" aria-label="Sidebar">
+    <div class="h-full px-3 pb-4 overflow-y-auto bg-black">
+        <ul class="space-y-2 font-medium">
+            
+            <li>
+                <a href="/products/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-2 h-2 rounded-full border border-gray-400 bg-gray-700 group-hover:border-white group-hover:bg-gray-500"></span>
+                    <span class="ms-3">Products</span>
+                </a>
+            </li>
+            <li>
+                <a href="/forge/" class="flex items-center p-2 rounded-lg group text-sm ps-4 font-semibold text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Forge</span>
+                </a>
+            </li>
+            <li>
+                <a href="/answers/" class="flex items-center p-2 rounded-lg group text-sm ps-4 font-semibold text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Answers</span>
+                </a>
+            </li>
+            <li>
+                <a href="/ore/" class="flex items-center p-2 rounded-lg group text-sm ps-4 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Ore</span>
+                </a>
+            </li>
+            
+            
+
+            
+            
+            <li class="pt-3 mt-2 border-t border-gray-800/70">
+                <a href="/design-partners/" class="flex items-center p-2 rounded-lg group text-xs font-mono font-bold uppercase tracking-wider ps-4 text-gray-500 hover:bg-gray-900 hover:text-white">
+                    <span class="ms-3">Design Partner</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/lux/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Lux</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/coherence/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Coherence</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/mash/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">MASH</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/art/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">ART</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/arc/" class="flex items-center p-2 rounded-lg group text-sm ps-6 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">ARC</span>
+                </a>
+            </li>
+            
+            
+
+            
+            <li class="pt-4 mt-4 border-t border-gray-800">
+                <a href="/engineering/" class="flex items-center p-2 rounded-lg group text-voxell-green bg-gray-900">
+                    <span class="w-2 h-2 rounded-full border bg-voxell-green border-voxell-green"></span>
+                    <span class="ms-3">Engineering</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/qwen-native-cuda-engine/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Ripping Out TEI</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/ingot_poured/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Ingot Poured</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/cache-feedback-gap/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Cache Feedback Gap</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/rag-pipeline-feedback/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">RAG Feedback Loop</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/starved-cores/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Starved Cores</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/graph-traversal-anti-pattern/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Memory Abuse</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/engineering/deterministic-embeddings/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Why Vector Search Lies</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/mash/sorting-on-blackwell/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">MASH Sort</span>
+                </a>
+            </li>
+            
+
+            
+            <li class="pt-4 mt-4 border-t border-gray-800">
+                <a href="#" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-2 h-2 rounded-full border border-gray-400 bg-gray-700 group-hover:border-white group-hover:bg-gray-500"></span>
+                    <span class="ms-3">Standards</span>
+                </a>
+            </li>
+            <li>
+                <a href="/hint/" class="flex items-center p-2 rounded-lg group text-sm ps-4 text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">HINT Protocol</span>
+                </a>
+            </li>
+
+            
+            <li class="pt-4 mt-4 border-t border-gray-800">
+                <a href="/about/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-2 h-2 rounded-full border border-gray-400 bg-gray-700 group-hover:border-white group-hover:bg-gray-500"></span>
+                    <span class="ms-3">About</span>
+                </a>
+            </li>
+
+            
+            <li class="pt-4 mt-4 border-t border-gray-800">
+                <a href="/blog/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white">
+                    <span class="w-2 h-2 rounded-full border border-gray-400 bg-gray-700 group-hover:border-white group-hover:bg-gray-500"></span>
+                    <span class="ms-3">Blog</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/vbms-journey-scoring/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Quality Scoring</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/eight-weeks/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Eight Weeks to #1</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/vectors-are-not-ontologies/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Vectors Are Not Ontologies</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/your-vector-database-is-a-coping-mechanism/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">Vector DB Is a Coping Mechanism</span>
+                </a>
+            </li>
+            
+            <li>
+                <a href="/blog/cssguard-bidirectional-validation/" class="flex items-center p-2 rounded-lg group text-gray-400 hover:bg-gray-900 hover:text-white text-sm ps-4">
+                    <span class="w-1.5 h-1.5 rounded-full border border-gray-400 bg-gray-600 group-hover:border-white group-hover:bg-gray-400"></span>
+                    <span class="ms-3">CSSGuard</span>
+                </a>
+            </li>
+            
+        </ul>
+    </div>
+</aside>
+
+
+    <main class="sm:ml-64 pt-16">
+        
+
+
+<section class="pt-32 pb-12 bg-black">
+    <div class="container mx-auto px-6">
+        <div class="max-w-3xl mx-auto">
+            
+            <a href="/engineering/" class="inline-flex items-center gap-2 text-gray-400 hover:text-voxell-green transition-colors mb-8 font-mono text-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Engineering Insights
+            </a>
+
+            
+            <h1 class="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">
+                Why Your Vector Search Lies
+            </h1>
+
+            
+            <div class="flex items-center gap-4 text-gray-400 font-mono text-sm mb-8">
+                <span>Jonathan Corners</span>
+                <span class="text-gray-700">|</span>
+                <span>January 2026</span>
+            </div>
+
+            
+            <p class="text-xl text-gray-400 leading-relaxed border-l-2 border-purple-500 pl-6">
+                Same query, different results. The floating-point problem that quietly breaks reproducible embeddings, and what bit-exact determinism takes in production.
+            </p>
+        </div>
+    </div>
+</section>
+
+
+
+<section class="bg-black border-t border-gray-900">
+    <div class="container mx-auto px-6">
+        <div class="max-w-4xl mx-auto">
+            <img src="/img/determinism-hero.webp" alt="Why Your Vector Search Lies" class="w-full rounded-lg border border-gray-800">
+        </div>
+    </div>
+</section>
+
+
+
+<section class="py-12 bg-black">
+    <div class="container mx-auto px-6">
+        <article class="max-w-3xl mx-auto prose">
+            <p>There is a class of bug that doesn&rsquo;t look like a bug. No exception. No error log. No changed code. Just this: you run the same query against the same index twice, and you get different results. Not wrong results, just results that look plausible both times. Different ones.</p>
+<p>You restart the service. Same thing. You roll back a deployment. Same thing. You pin every library version, freeze the model weights, feed in identical inputs byte-for-byte.</p>
+<p>Still different.</p>
+<p>This isn&rsquo;t a race condition. It isn&rsquo;t a caching problem. It&rsquo;s floating point arithmetic behaving exactly as specified, and that specification is the problem.</p>
+<h2 id="the-arithmetic-you-learned-is-wrong">The arithmetic you learned is wrong</h2>
+<p>Addition is associative. <em>(a + b) + c = a + (b + c)</em>. You learned this in elementary school and it has been true in every math class since.</p>
+<p>It is not true for floating point numbers.</p>
+<p>Floating point represents real numbers as a finite binary fraction. The precision is fixed: 23 bits for a 32-bit float. When you add two floating point numbers and the exact result needs more bits than the format provides, it gets rounded. That rounding happens at every single operation.</p>
+<p>The order in which you add numbers determines which intermediate values get rounded, which changes the accumulated error, which changes the final bit pattern. Mathematically equivalent expressions produce computationally different results:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>a <span style="color:#f92672">=</span> <span style="color:#ae81ff">1e-16</span>
+</span></span><span style="display:flex;"><span>b <span style="color:#f92672">=</span> <span style="color:#ae81ff">1.0</span>
+</span></span><span style="display:flex;"><span>c <span style="color:#f92672">=</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1.0</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># Mathematically identical. Computationally different.</span>
+</span></span><span style="display:flex;"><span>(a <span style="color:#f92672">+</span> b) <span style="color:#f92672">+</span> c  <span style="color:#75715e"># = 1.1102230246251565e-16</span>
+</span></span><span style="display:flex;"><span>a <span style="color:#f92672">+</span> (b <span style="color:#f92672">+</span> c)  <span style="color:#75715e"># = 1e-16</span>
+</span></span></code></pre></div><p>Same three numbers. Two legitimate answers. Both correct within the IEEE 754 standard. Neither equal to the other.</p>
+<p>This is not a flaw. It is a deliberate design choice. Floating point trades exactness for speed and range. For most computations, the rounding error is small enough to ignore. For some, it is not.</p>
+<h2 id="parallelism-turns-the-volume-up-to-eleven">Parallelism turns the volume up to eleven</h2>
+<p>Sequential code executes in a predictable order. Thread A sums values one through a million, left to right, every time. The rounding sequence is fixed. The result is deterministic.</p>
+<p>A GPU doesn&rsquo;t work this way.</p>
+<p>A modern GPU executes thousands of threads simultaneously, organized into groups of 32 called warps. When you ask a GPU to sum a large array, it runs a parallel reduction: threads simultaneously sum adjacent pairs of values, then pairs of pairs, building a convergence tree. It is the fastest way to reduce a large array. It is also non-deterministic.</p>
+<p>The shape of the reduction tree depends on which warps the scheduler dispatches first, how memory latency plays out across shared memory banks, how thread blocks get distributed across streaming multiprocessors. All of that changes run to run. Every change in tree shape is a change in the order of additions. Every change in addition order is a change in which intermediate results get rounded.</p>
+<pre tabindex="0"><code class="language-cuda" data-lang="cuda">// GPU parallel reduction: 1024 threads summing values
+__shared__ float sdata[1024];
+
+// The reduction tree shape depends on:
+//   Warp scheduling: nondeterministic across runs
+//   Memory bank conflicts: load-dependent
+//   Thread block placement: runtime-dependent
+//
+// Different tree = different addition order
+// Different addition order = different rounding sequence
+// Different rounding sequence = different final bits
+</code></pre><figure style="margin: 2em 0;">
+  <img src="/img/determinism-diagram.svg" alt="Diagram showing how two threads processing identical inputs in different orders produce different floating-point outputs" style="width:100%; border-radius:8px; border:1px solid #1a1a1a; background:#000;">
+  <figcaption style="font-family:'JetBrains Mono',monospace; font-size:0.75rem; color:#4b5563; margin-top:0.75rem; text-align:center;">Same input. Same model. Different warp scheduling. Different bits out, both correct under IEEE 754.</figcaption>
+</figure>
+<p>A parallel sum of 100,000 floats across a thousand threads can produce thousands of distinct bit patterns across runs. All within floating point&rsquo;s error bounds. All &ldquo;correct.&rdquo; All different from each other.</p>
+<h2 id="why-embedding-engineers-dont-know-they-have-this-problem">Why embedding engineers don&rsquo;t know they have this problem</h2>
+<p>Embedding models are sensitive to exact numerical inputs. The same token sequence, fed through the same model weights, should produce the same vector. On a GPU without determinism controls, it doesn&rsquo;t.</p>
+<p>The differences are small: typically the last one or two bits of a 32-bit float. The resulting vectors are nearly identical: cosine similarity above 0.9999. No test you&rsquo;d normally write would catch it. The numbers look fine. But over time, at scale, the consequences compound.</p>
+<p><strong>Threshold drift.</strong> Your retrieval system filters results at a similarity threshold of 0.85. You calibrated that threshold against your corpus six months ago. Since then, a model server restart, a hardware failover, a CUDA library upgrade: any of them can shift the bit pattern of your embeddings by one or two bits. The threshold you calibrated no longer aligns with the distribution it was set against. Precision and recall drift. Nobody notices until someone asks why search quality degraded in March.</p>
+<p><strong>Index inconsistency.</strong> You run a partial re-indexing job: a subset of your corpus changed, so you recompute just those vectors. The new embeddings were computed on different hardware, or after a library update, or under different thread scheduling. Same documents. Same model. Different bit patterns. Your index now contains embeddings from two subtly different distributions. Approximate nearest neighbor search degrades across the boundary, invisibly.</p>
+<p><strong>Audit failure.</strong> A regulator, a customer, or an internal security review asks you to reproduce the embedding for a document from eight months ago. You recompute it. The result doesn&rsquo;t match. The GPU scheduling that produced the original is gone. The cuBLAS version has changed. You cannot prove what your system computed, which means you cannot defend what it decided.</p>
+<p><strong>Agent instability.</strong> An AI agent makes decisions based on semantic similarity scores. Those scores should be deterministic across agent runs on identical inputs. Without bit-exact embeddings, they are not, which means agent behavior isn&rsquo;t reproducible across restarts, which means you can&rsquo;t reliably debug it, test it, or certify it.</p>
+<h2 id="the-solutions-exist-they-carry-costs">The solutions exist. They carry costs.</h2>
+<p>There is no free lunch in deterministic GPU computation. Every approach trades something.</p>
+<p><strong>Deterministic library modes.</strong> NVIDIA exposes deterministic execution paths in its core libraries:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#75715e">// Force cuBLAS to avoid nondeterministic reductions
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>cublasSetMathMode(handle, CUBLAS_MATH_DISALLOW_REDUCED_PRECISION_REDUCTION);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// PyTorch global determinism flag
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>torch.use_deterministic_algorithms(True)
+</span></span><span style="display:flex;"><span>torch.backends.cudnn.deterministic <span style="color:#f92672">=</span> True
+</span></span><span style="display:flex;"><span>torch.backends.cudnn.benchmark <span style="color:#f92672">=</span> False
+</span></span></code></pre></div><p>Cost: 2-10× performance penalty on operations that depend on fast nondeterministic reduction. Not all operations have deterministic modes. Critically: &ldquo;deterministic&rdquo; in cuBLAS 11.x and cuBLAS 12.x produce <em>different</em> results from each other: pinning the library version is part of the solution, not a bonus.</p>
+<p><strong>Fixed reduction order.</strong> Force a deterministic tree topology by serializing at synchronization points:</p>
+<pre tabindex="0"><code class="language-cuda" data-lang="cuda">__device__ float deterministic_reduce(float* data, int n) {
+    for (int stride = 1; stride &lt; n; stride *= 2) {
+        int idx = threadIdx.x * stride * 2;
+        if (idx + stride &lt; n) {
+            data[idx] += data[idx + stride];
+        }
+        __syncthreads();  // Force consistent ordering
+    }
+    return data[0];
+}
+</code></pre><p>Cost: The synchronization barriers serialize execution at each tree level. You keep the reduction tree shape but lose most of the throughput advantage. Expect 2-5× slowdown on large reductions.</p>
+<p><strong>Kahan summation.</strong> A compensated algorithm that explicitly tracks rounding error and corrects for it at each step:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#66d9ef">float</span> <span style="color:#a6e22e">kahan_sum</span>(<span style="color:#66d9ef">float</span><span style="color:#f92672">*</span> values, <span style="color:#66d9ef">int</span> n) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">float</span> sum <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0f</span>;
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">float</span> compensation <span style="color:#f92672">=</span> <span style="color:#ae81ff">0.0f</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> (<span style="color:#66d9ef">int</span> i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>; i <span style="color:#f92672">&lt;</span> n; i<span style="color:#f92672">++</span>) {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">float</span> y <span style="color:#f92672">=</span> values[i] <span style="color:#f92672">-</span> compensation;
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">float</span> t <span style="color:#f92672">=</span> sum <span style="color:#f92672">+</span> y;
+</span></span><span style="display:flex;"><span>        compensation <span style="color:#f92672">=</span> (t <span style="color:#f92672">-</span> sum) <span style="color:#f92672">-</span> y;  <span style="color:#75715e">// Recover lost bits
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        sum <span style="color:#f92672">=</span> t;
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> sum;
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>Cost: Four operations per element instead of one. Substantially reduces order sensitivity but doesn&rsquo;t eliminate it: different thread orderings can still produce different results, just smaller differences.</p>
+<p><strong>Fixed-point arithmetic.</strong> Integers are genuinely associative. <em>(a + b) + c</em> and <em>a + (b + c)</em> produce identical results in integer arithmetic, regardless of operation order:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#75715e">// Store at fixed precision; operate in exact integer arithmetic
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">const</span> <span style="color:#66d9ef">int64_t</span> SCALE <span style="color:#f92672">=</span> <span style="color:#ae81ff">1LL</span> <span style="color:#f92672">&lt;&lt;</span> <span style="color:#ae81ff">32</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int64_t</span> a_fixed <span style="color:#f92672">=</span> (<span style="color:#66d9ef">int64_t</span>)(a <span style="color:#f92672">*</span> SCALE);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int64_t</span> b_fixed <span style="color:#f92672">=</span> (<span style="color:#66d9ef">int64_t</span>)(b <span style="color:#f92672">*</span> SCALE);
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">int64_t</span> c_fixed <span style="color:#f92672">=</span> (<span style="color:#66d9ef">int64_t</span>)(c <span style="color:#f92672">*</span> SCALE);
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Order does not matter. Result is always identical.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">int64_t</span> sum <span style="color:#f92672">=</span> a_fixed <span style="color:#f92672">+</span> b_fixed <span style="color:#f92672">+</span> c_fixed;
+</span></span></code></pre></div><p>Cost: Reduced dynamic range. Overflow risk on large accumulations. Requires careful scale selection. Works well for similarity score accumulators and distance calculations; doesn&rsquo;t generalize to operations like softmax or layer normalization.</p>
+<p><strong>Library version pinning.</strong> The zero-performance-cost intervention. Pin every CUDA library version into your deployment artifact and never upgrade mid-deployment. Results won&rsquo;t match across CUDA versions, but every run within the same deployment will agree.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-dockerfile" data-lang="dockerfile"><span style="display:flex;"><span><span style="color:#66d9ef">FROM</span><span style="color:#e6db74"> nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span><span style="display:flex;"><span><span style="color:#960050;background-color:#1e0010"></span><span style="color:#75715e"># Exact CUDA + cuDNN versions locked: reproducibility across restarts guaranteed</span><span style="color:#960050;background-color:#1e0010">
+</span></span></span></code></pre></div><p>Cost: None at runtime. Operational cost of managing exact version artifacts. Does not solve the problem across library upgrades, only within a pinned deployment.</p>
+<h2 id="the-tradeoff-map">The tradeoff map</h2>
+<table>
+  <thead>
+      <tr>
+          <th>Approach</th>
+          <th>Bit-exact?</th>
+          <th>Perf hit</th>
+          <th>Works across upgrades?</th>
+      </tr>
+  </thead>
+  <tbody>
+      <tr>
+          <td>Library deterministic modes</td>
+          <td>Yes</td>
+          <td>2-10×</td>
+          <td>No, pin versions too</td>
+      </tr>
+      <tr>
+          <td>Fixed reduction order</td>
+          <td>Yes</td>
+          <td>2-5×</td>
+          <td>Yes</td>
+      </tr>
+      <tr>
+          <td>Kahan summation</td>
+          <td>Near</td>
+          <td>2-4×</td>
+          <td>Yes</td>
+      </tr>
+      <tr>
+          <td>Fixed-point accumulators</td>
+          <td>Yes</td>
+          <td>1.5-3×</td>
+          <td>Yes</td>
+      </tr>
+      <tr>
+          <td>Library version pinning</td>
+          <td>Yes</td>
+          <td>0×</td>
+          <td>Only within version</td>
+      </tr>
+  </tbody>
+</table>
+<p>In practice, production embedding pipelines combine approaches: deterministic library modes at the model inference layer, fixed-point or Kahan for similarity accumulators, and strict version pinning in the deployment artifact. Each layer handles a different source of nondeterminism.</p>
+<h2 id="the-actual-point">The actual point</h2>
+<p>&ldquo;Same query, same results&rdquo; is what semantic search is supposed to mean. Without bit-exact determinism, you have semantic search that drifts: quietly, invisibly, in ways that don&rsquo;t surface as errors. Only as degraded quality, unreproducible behavior, and indefensible audit logs.</p>
+<p>This is why we built determinism into Voxell&rsquo;s infrastructure at the foundation rather than retrofitting it.</p>
+<p><a href="/coherence/">Coherence</a> is Voxell&rsquo;s deterministic semantic memory layer. It runs on GPU-native exact tensor operations with fixed numerical ordering guarantees. The same query against the same index returns the same result: on the same hardware, across service restarts. No threshold drift. No index inconsistency. No audit gap.</p>
+<p><a href="/arc/">ARC</a> extends this to caching. Deterministic embeddings make caching semantically safe: a cache hit and a cache miss return the same vector, not approximately the same vector. Without bit-exact determinism, a cache that &ldquo;speeds up&rdquo; retrieval also makes it inconsistent.</p>
+<p><a href="/forge/">Forge</a> models are evaluated and served under deterministic modes. The embedding you compute today is the embedding you can reproduce tomorrow.</p>
+<p>Determinism isn&rsquo;t a feature you add to a retrieval system. It is a correctness property the system either has or doesn&rsquo;t. Everything downstream of your embeddings (your thresholds, your indexes, your agents, your audit trails) depends on it.</p>
+
+        </article>
+    </div>
+</section>
+
+
+<section class="py-12 bg-black">
+    <div class="container mx-auto px-6">
+        <div class="max-w-3xl mx-auto">
+            <div class="border border-voxell-gray rounded-xl p-8 bg-voxell-dark/30">
+                <h3 class="text-sm font-mono text-voxell-green uppercase tracking-wider mb-4">Author</h3>
+                <p class="text-gray-300 mb-3 leading-relaxed">
+                    Jonathan Corners - Founder, Voxell. I build GPU-native infrastructure for real-time AI systems.
+                </p>
+                <p class="text-gray-400 mb-6 leading-relaxed">
+                    If you're working on latency + consistency problems, I'd like to hear about it.
+                </p>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <a href="/#contact" class="inline-flex items-center justify-center gap-2 bg-voxell-green text-black font-bold py-3 px-6 rounded-lg hover:bg-voxell-green-dark transition-all duration-300">
+                        Contact
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                        </svg>
+                    </a>
+                    <span class="text-gray-400 text-xs">24h reply • NDA ok • No IP needed</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+<section class="py-16 bg-voxell-dark border-t border-voxell-gray/30">
+    <div class="container mx-auto px-6">
+        <div class="max-w-3xl mx-auto">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6 p-8 bg-black/50 border border-voxell-gray rounded-xl">
+                <div>
+                    <p class="text-white font-semibold mb-1">Ready to see this in practice?</p>
+                    <p class="text-gray-400 text-sm">Get hands-on with Voxell Coherence.</p>
+                </div>
+                <a href="/#contact" class="inline-flex items-center gap-2 bg-voxell-green text-black font-bold py-3 px-6 rounded-lg hover:bg-voxell-green-dark transition-all duration-300">
+                    Request Access
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+        <footer class="py-16 bg-black border-t border-voxell-gray/30">
+    <div class="container mx-auto px-6">
+        <div class="grid md:grid-cols-4 gap-12 mb-12">
+            <div class="md:col-span-1">
+                <a href="/" class="flex items-center text-2xl font-bold font-mono text-voxell-green">
+                    <img src="/logo-transparent.svg" alt="Voxell" class="h-6 w-6 mr-2">
+                    VOXELL
+                </a>
+                <p class="text-gray-400 mt-4 text-sm leading-relaxed">
+                    GPU-native infrastructure for real-time AI systems.
+                </p>
+            </div>
+
+            <div>
+                <p class="text-white font-semibold mb-4">Products</p>
+                <ul class="space-y-3">
+                    
+                    
+                    <li><a href="/forge/" class="text-white font-semibold hover:text-voxell-green transition-colors text-sm">Forge</a></li>
+                    
+                    <li><a href="/products/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">All Products</a></li>
+                    <li><a href="/design-partners/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Design Partners</a></li>
+                    
+                    <li><a href="/lux/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Lux</a></li>
+                    
+                    <li><a href="/coherence/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Coherence</a></li>
+                    
+                    <li><a href="/mash/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">MASH</a></li>
+                    
+                    <li><a href="/art/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">ART</a></li>
+                    
+                    <li><a href="/arc/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">ARC</a></li>
+                    
+                </ul>
+            </div>
+
+            <div>
+                <p class="text-white font-semibold mb-4">Engineering</p>
+                <ul class="space-y-3">
+                    <li><a href="/engineering/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">All Articles</a></li>
+                    
+                    
+                    <li><a href="/engineering/qwen-native-cuda-engine/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Ripping Out TEI</a></li>
+                    
+                    
+                    
+                    <li><a href="/engineering/ingot_poured/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Ingot Poured</a></li>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                </ul>
+            </div>
+
+            <div>
+                <p class="text-white font-semibold mb-4">Company</p>
+                <ul class="space-y-3">
+                    <li><a href="/about/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">About</a></li>
+                    <li><a href="/docs/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Docs</a></li>
+                    <li><a href="/support/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Support</a></li>
+                    <li><a href="/#contact" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Contact</a></li>
+                    <li><a href="https://playground.voxell.ai" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Playground</a></li>
+                    <li><a href="https://dash.voxell.ai" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Dashboard</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="border-t border-voxell-gray/30 pt-8">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6">
+                <div class="flex items-center gap-4">
+                    <img src="/nvidia-inception-badge.svg" alt="NVIDIA Inception Program badge" class="h-12 w-auto">
+                    <div>
+                        <p class="text-gray-500 text-xs font-mono uppercase tracking-wider">Program Member</p>
+                        <p class="text-gray-300 text-sm font-semibold">Member of NVIDIA Inception</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 mt-4 md:mt-0">
+                    <a href="/terms/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Terms</a>
+                    <a href="/privacy/" class="text-gray-400 hover:text-voxell-green transition-colors text-sm">Privacy</a>
+                    <span class="text-gray-400 text-sm">California, USA</span>
+                </div>
+            </div>
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 text-sm">&copy; 2026 Voxell Inc. All rights reserved.</p>
+                <p class="text-gray-600 text-xs mt-2 md:mt-0">&copy; 2025 NVIDIA, the NVIDIA logo, Blackwell, CUDA, DGX, and NVIDIA Inception are trademarks and/or registered trademarks of NVIDIA Corporation in the U.S. and other countries.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script>
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    if (mobileMenuBtn && mobileMenu) {
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        document.querySelectorAll('#mobile-menu a').forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+    }
+</script>
+
+    </main>
+
+    
+    <script>
+    
+    (function() {
+        const toggle = document.querySelector('[data-drawer-toggle]');
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.createElement('div');
+        backdrop.className = 'fixed inset-0 bg-black/50 z-30 sm:hidden hidden';
+        backdrop.id = 'sidebar-backdrop';
+        document.body.appendChild(backdrop);
+
+        function closeSidebar() {
+            sidebar.classList.add('-translate-x-full');
+            sidebar.classList.remove('translate-x-0');
+            backdrop.classList.add('hidden');
+        }
+
+        toggle?.addEventListener('click', function() {
+            const isOpen = sidebar.classList.contains('translate-x-0');
+            if (isOpen) {
+                closeSidebar();
+            } else {
+                sidebar.classList.remove('-translate-x-full');
+                sidebar.classList.add('translate-x-0');
+                backdrop.classList.remove('hidden');
+            }
+        });
+
+        backdrop.addEventListener('click', closeSidebar);
+
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && sidebar.classList.contains('translate-x-0')) {
+                closeSidebar();
+            }
+        });
+    })();
+
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const params = new URLSearchParams(window.location.search);
+        const fields = {
+            'page_path': window.location.pathname,
+            'page_url': window.location.href,
+            'referrer': document.referrer || '',
+            'utm_source': params.get('utm_source') || '',
+            'utm_medium': params.get('utm_medium') || '',
+            'utm_campaign': params.get('utm_campaign') || '',
+            'utm_content': params.get('utm_content') || '',
+            'utm_term': params.get('utm_term') || '',
+            'gclid': params.get('gclid') || '',
+            'fbclid': params.get('fbclid') || ''
+        };
+        document.querySelectorAll('input.attr-field').forEach(function(input) {
+            if (fields[input.name]) input.value = fields[input.name];
+        });
+    });
+    </script>
+
+    
+    
+    <script>
+    (function(){
+        var EP = "https:\/\/beacon.voxell.ai\/b";
+        function send(kind, label){
+            try {
+                var data = JSON.stringify({
+                    k: kind,
+                    p: location.pathname,
+                    r: document.referrer || "",
+                    l: label || ""
+                });
+                
+                navigator.sendBeacon(EP, new Blob([data], { type: "text/plain" }));
+            } catch (e) {}
+        }
+        send("pv");
+        document.addEventListener("click", function(ev){
+            var el = ev.target.closest("[data-track]");
+            if (el) send("click", el.getAttribute("data-track"));
+        }, true);
+    })();
+    </script>
+    
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"153b051d126b4df483cd2568eeae771f","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
