@@ -19,13 +19,28 @@ High-level design intent. Updated as architecture evolves.
 
 ## Channel Contract
 
+Streaming order per request: `Token(u32)*` → `Text(String)` → `Done(StopReason)` → _(channel closes)_
+
+- `Token(u32)` — **primary streaming path**. One per generated token, in order. Consumers that want word-level streaming decode these.
+- `Text(String)` — full assembled response text, sent exactly once just before `Done`. Consumers that only want the final answer ignore all `Token` variants and wait for this.
+- `Done(StopReason)` — terminal signal. Always last. Consumer must drain `Token`/`Text` before acting on `Done`.
+- `Error(String)` — terminal error. Replaces `Done`. Channel closes after this.
+
 ```rust
 // In zoidformer-core — also pub re-exported from zoidborg-agent when feature active.
+
 pub enum InferResponse {
-    Text(String),
-    Token(u32),
+    Token(u32),      // primary: one per generated token, in generation order
+    Text(String),    // full assembled text, sent once before Done
     Done(StopReason),
     Error(String),
+}
+
+pub enum StopReason {
+    EndTurn,
+    MaxTokens,
+    StopSequence(String),
+    Cancelled,
 }
 
 pub struct ZoidformerMetrics {
@@ -178,12 +193,12 @@ Note: cuBLAS 11.x and 12.x produce different deterministic results from each oth
 
 ## Open Decisions
 
-- [ ] Token-streaming vs text-streaming as primary interface (currently both in enum)
+- [x] Streaming interface → **Token(u32) primary; Text(String) once before Done** — consumers choose which to use
 - [x] Batch size for multi-user: initially 1 — persistent CUDA context model precludes multi-batch in phase 0 (starved-cores)
 - [x] CUDA graph strategy → **prefill: StepGraph + tensor pool; decode: CUDA graph recorded once, replayed per token** (cuTile/Grout)
-- [ ] BF16 vs F16 intermediate activations — depends on target GPU; RTX 5080/5090 favor BF16 (Blackwell)
-- [ ] Kernel safety tier policy: safe default / `unchecked_accesses` / raw `*mut T` (cuTile pattern, needs explicit doc in AGENTS.md)
+- [x] Float format → **BF16** for intermediate activations (Qwen3 native, Blackwell/Ampere+ preferred)
+- [ ] Kernel safety tier policy: safe default / `unchecked_accesses` / raw `*mut T` (cuTile pattern — add to AGENTS.md at phase 0.5)
 - [x] LoRA strategy → **hot-swap via router**, not separate model instances (ingot-poured)
 - [x] Memory layout → **topology-aware contiguous layout for KV-cache blocks; sort gather indices before bulk HBM read** (memory-abuse)
-- [ ] Determinism policy → need decision on `cublasSetMathMode` + cuBLAS version pinning in build artifact before any cache feedback work
+- [x] Determinism → **strict**: `cublasSetMathMode(DISALLOW_REDUCED_PRECISION_REDUCTION)` + pin cuBLAS version in build artifact. Prerequisite for cache feedback features.
 - [x] Sub-H100 hardware target → **RTX 5080/5090 as primary targets**, not H100 (sweat-capital, starved-cores)

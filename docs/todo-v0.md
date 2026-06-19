@@ -12,12 +12,13 @@ Conventions: per-task spec uses **Goal / Touches / Success / Tests / Difficulty*
 - [ ] `0.1.0` Workspace scaffold
   - **Goal:** Set up Cargo workspace with `zoidformer-core` crate. Define the channel
     contract types: `InferRequest` (prompt tokens, sampling params, cancel token),
-    `InferResponse` (enum: `Token(u32)`, `Text(String)`, `Done(StopReason)`, `Error(String)`),
-    `ZoidformerMetrics` (decode_tps, prefill_tps, vram_used_mb, vram_total_mb,
-    kv_cache_occupancy_pct, cuda_graph_active: bool). Feature-gate: `features = ["cuda"]`
-    present in root Cargo.toml but no CUDA dep in core. `ZoidformerEngine` trait with
-    `async fn infer(req: InferRequest, tx: mpsc::UnboundedSender<InferResponse>,
-    metrics: watch::Sender<ZoidformerMetrics>)`.
+    `InferResponse` (enum: `Token(u32)` primary streaming, `Text(String)` assembled once before Done,
+    `Done(StopReason)`, `Error(String)`). `StopReason` enum: `EndTurn`, `MaxTokens`,
+    `StopSequence(String)`, `Cancelled`. `ZoidformerMetrics` (decode_tps, prefill_tps,
+    vram_used_mb, vram_total_mb, kv_cache_occupancy_pct, cuda_graph_active: bool).
+    Feature-gate: `features = ["cuda"]` present in root Cargo.toml but no CUDA dep in core.
+    `ZoidformerEngine` trait with `async fn infer(req: InferRequest,
+    tx: mpsc::UnboundedSender<InferResponse>, metrics: watch::Sender<ZoidformerMetrics>)`.
   - **Touches:** `Cargo.toml`, `crates/zoidformer-core/`
   - **Success:** `cargo check --workspace` passes. Types are `Send + Sync`.
   - **Tests:** unit: `InferResponse` variants round-trip through a channel; `ZoidformerMetrics` default is sensible zeros. **Difficulty:** Low
@@ -76,8 +77,9 @@ Conventions: per-task spec uses **Goal / Touches / Success / Tests / Difficulty*
 - [ ] `0.4.0` Stub inference engine
   - **Goal:** `zoidformer-engine` crate. `StubEngine` implements `ZoidformerEngine` trait.
     Emits a fixed response ("Zoidformer stub: [echo of first 10 prompt tokens]") as
-    `InferResponse::Text` tokens at ~100 tok/s simulated, then `Done(EndTurn)`.
-    Sends constant `ZoidformerMetrics` with zeroed VRAM and 100.0 decode_tps.
+    `InferResponse::Token(id)` per token at ~100 tok/s simulated, then one
+    `InferResponse::Text(assembled)`, then `Done(EndTurn)`. Matches the channel contract
+    streaming order. Sends constant `ZoidformerMetrics` with zeroed VRAM and 100.0 decode_tps.
     Must compile without CUDA — no `[cuda]` feature needed here.
   - **Touches:** `crates/zoidformer-engine/src/stub.rs`
   - **Success:** `StubEngine::infer()` completes without panic and sends `Done` last.
