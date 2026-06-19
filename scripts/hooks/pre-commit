@@ -1,0 +1,32 @@
+#!/bin/sh
+# Pre-commit: fmt → clippy → test. Never skip with --no-verify.
+set -e
+
+echo "=== Pre-commit checks ==="
+
+echo "--- cargo fmt --check ---"
+if cargo fmt --check; then
+    echo "PASSED: cargo fmt"
+else
+    echo "FAILED: cargo fmt"
+    echo "Run 'cargo fmt' to fix formatting."
+    exit 1
+fi
+
+echo "--- cargo clippy ---"
+if cargo clippy --workspace --all-targets --all-features -- -D warnings 2>&1; then
+    echo "PASSED: cargo clippy"
+else
+    echo "FAILED: cargo clippy"
+    exit 1
+fi
+
+echo "--- cargo test ---"
+if cargo test --workspace; then
+    echo "PASSED: cargo test"
+else
+    echo "FAILED: cargo test"
+    exit 1
+fi
+
+echo "=== All pre-commit checks passed ==="

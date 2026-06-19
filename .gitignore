@@ -1,0 +1,28 @@
+# Cargo
+target/
+**/*.rs.bk
+*.pdb
+**/mutants.out*/
+Cargo.lock
+
+# CUDA build artifacts
+**/*.o
+**/*.ptx
+**/*.cubin
+**/*.fatbin
+**/*.nvvm
+
+# Ralph logs — churn per task, not permanent history
+docs/ralph-log.md
+docs/ralph-errors.log
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
